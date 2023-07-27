@@ -1,4 +1,6 @@
 from pathlib import Path
+from timeline.models import TimelineFile
+from typings import Iterable
 import sqlite3
 
 
@@ -14,9 +16,9 @@ def clear_table(cursor, table_name):
     cursor.execute(f"DELETE FROM {table_name}")
 
 
-def create_found_files_table(cursor):
+def create_timeline_files_table(cursor):
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS found_files (
+        CREATE TABLE IF NOT EXISTS timeline_files (
             file_path TEXT PRIMARY KEY NOT NULL,
             size INTEGER,
             date_found TIMESTAMP NOT NULL,
@@ -37,10 +39,10 @@ def create_checksum_cache_table(cursor):
     ''')
 
 
-def add_found_files(cursor, files):
+def add_timeline_files(cursor, files: Iterable[TimelineFile]):
     cursor.executemany(
         '''
-        INSERT INTO found_files (
+        INSERT INTO timeline_files (
             file_path,
             checksum,
             date_found,
@@ -68,7 +70,7 @@ def add_found_files(cursor, files):
     )
 
 
-def add_cached_checksum_to_found_files(cursor):
+def add_cached_checksum_to_timeline_files(cursor):
     """
     Checksums are expensive to calculate. We build a cache of checksums instead
     of calculating it for every file. We assume that if the path, size and mtime
@@ -76,17 +78,17 @@ def add_cached_checksum_to_found_files(cursor):
     """
     create_checksum_cache_table(cursor)
     cursor.execute('''
-        UPDATE found_files
+        UPDATE timeline_files
         SET checksum = cache.checksum
         FROM (
             SELECT checksum, file_path, size, date_modified
             FROM checksum_cache
         ) AS cache
-        WHERE found_files.checksum IS NULL
+        WHERE timeline_files.checksum IS NULL
         AND cache.checksum IS NOT NULL
-        AND found_files.file_path=cache.file_path
-        AND found_files.size=cache.size
-        AND found_files.date_modified=cache.date_modified
+        AND timeline_files.file_path=cache.file_path
+        AND timeline_files.size=cache.size
+        AND timeline_files.date_modified=cache.date_modified
     ''')
     return cursor.rowcount
 
@@ -96,14 +98,14 @@ def update_checksum_cache(cursor):
     clear_table(cursor, 'checksum_cache')
     cursor.execute('''
         INSERT INTO checksum_cache (file_path, checksum, size, date_modified)
-        SELECT file_path, checksum, size, date_modified FROM found_files
+        SELECT file_path, checksum, size, date_modified FROM timeline_files
         WHERE checksum IS NOT NULL
     ''')
 
 
-def get_found_files_without_checksum(cursor) -> list[Path]:
+def get_timeline_files_without_checksum(cursor) -> list[Path]:
     cursor.execute('''
-        SELECT file_path FROM found_files WHERE checksum IS null
+        SELECT file_path FROM timeline_files WHERE checksum IS null
     ''')
     return [Path(row[0]) for row in cursor.fetchall()]
 
@@ -111,7 +113,7 @@ def get_found_files_without_checksum(cursor) -> list[Path]:
 def set_found_file_checksums(cursor, file_path_checksum_tuples):
     cursor.executemany(
         '''
-        UPDATE found_files
+        UPDATE timeline_files
         SET checksum = ?
         WHERE file_path = ?
         ''',

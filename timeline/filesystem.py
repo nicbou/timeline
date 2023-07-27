@@ -1,8 +1,5 @@
-from collections.abc import Generator
-from datetime import datetime
 from fnmatch import fnmatch
 from pathlib import Path
-from timeline.models import TimelineFile
 import base64
 import hashlib
 
@@ -25,20 +22,6 @@ def get_files_in_paths(paths: list[Path], includerules: set = {'*'}, ignorerules
             )
 
     return list(files)
-
-
-def get_timeline_files_in_paths(paths, includerules, ignorerules) -> Generator[TimelineFile]:
-    now = datetime.now().astimezone()
-
-    for path in get_files_in_paths(paths, includerules, ignorerules):
-        file_stats = path.stat()
-        yield TimelineFile(
-            file_path=path,
-            checksum=None,
-            date_found=now,
-            date_modified=datetime.fromtimestamp(file_stats.st_size),
-            size=file_stats.st_size,
-        )
 
 
 def get_checksum(file_path: Path) -> str:
