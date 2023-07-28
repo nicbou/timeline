@@ -1,6 +1,7 @@
-from timeline.database import create_timeline_files_table, add_timeline_files, clear_table, \
-    add_cached_checksum_to_timeline_files, update_checksum_cache, get_timeline_files_without_checksum, \
-    set_found_file_checksums, create_timeline_entries_table, add_timeline_entries
+from timeline.database import create_timeline_files_table, add_found_files, clear_table, \
+    apply_cached_checksums_to_found_files, commit_found_files, fill_missing_found_file_checksums, \
+    create_timeline_entries_table, add_timeline_entries, create_found_files_table
+from timeline.filesystem import get_checksum
 from timeline.models import TimelineEntry, TimelineFile, EntryType
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -9,33 +10,34 @@ import pytest
 import sqlite3
 
 
-def fake_timeline_files():
+def fake_found_files(tmp_path):
     now = datetime.now().astimezone()
     yesterday = now - timedelta(days=1)
 
-    return [
-        TimelineFile(
-            file_path=Path('/path/to/file_a.txt'),
-            checksum=None,
-            date_found=now,
-            size=111,
-            date_modified=now,
-        ),
-        TimelineFile(
-            file_path=Path('/path/to/file_b.txt'),
-            checksum=None,
-            date_found=now,
-            size=222,
-            date_modified=yesterday,
-        ),
-        TimelineFile(
-            file_path=Path('/path/to/file_c.txt'),
-            checksum='5FI7E739THTU8R4SI7EG6QMGA6IL0CAKBI2FAPKFSA4BR8DTMQPG',
-            date_found=now,
-            size=10995116277760,  # 10 TB
-            date_modified=yesterday,
-        ),
+    file_paths = [
+        tmp_path / 'file_a.text',
+        tmp_path / 'file_b.text',
+        tmp_path / 'file_c.text',
     ]
+
+    dates_modified = [
+        now,
+        now,
+        yesterday,
+    ]
+
+    for index, file_path in enumerate(file_paths):
+        with file_path.open('w') as file:
+            file.write('Hello file!' * (index + 1))
+        checksum = get_checksum(file_path)
+
+        yield TimelineFile(
+            file_path=file_path,
+            checksum=checksum,
+            date_added=now,
+            size=file_path.stat().st_size,
+            file_mtime=dates_modified[index],
+        )
 
 
 def fake_timeline_entries():
@@ -76,20 +78,135 @@ def fake_timeline_entries():
     ]
 
 
+def assert_result_count(cursor, query, count):
+    cursor.execute(query)
+    assert cursor.fetchone()[0] == count
+
+
 @pytest.fixture
 def cursor():
     connection = sqlite3.connect(':memory:', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
     cursor = connection.cursor()
+    create_found_files_table(cursor)
     create_timeline_files_table(cursor)
     create_timeline_entries_table(cursor)
     yield cursor
     connection.close()
 
 
-def test_add_timeline_entries(cursor):
-    timeline_files = fake_timeline_files()
+def test_clear_table(cursor, tmp_path):
+    add_found_files(cursor, fake_found_files(tmp_path))
+    assert_result_count(cursor, 'SELECT COUNT(*) FROM found_files', 3)
+    clear_table(cursor, 'found_files')
+    cursor.execute("SELECT * FROM found_files")
+    assert_result_count(cursor, 'SELECT COUNT(*) FROM found_files', 0)
+
+
+def test_add_found_files(cursor, tmp_path):
+    found_files = list(fake_found_files(tmp_path))
+    add_found_files(cursor, found_files)
+
+    cursor.execute("SELECT file_path, checksum, date_added, size, file_mtime FROM found_files")
+    rows = cursor.fetchall()
+    for index, row in enumerate(rows):
+        assert row == (
+            str(found_files[index].file_path),
+            found_files[index].checksum,
+            found_files[index].date_added.replace(tzinfo=None),
+            found_files[index].size,
+            found_files[index].file_mtime.replace(tzinfo=None),
+        )
+
+
+def test_add_found_files_multiple_times(cursor, tmp_path):
+    found_files = list(fake_found_files(tmp_path))
+    add_found_files(cursor, found_files)
+    new_file = TimelineFile(
+        file_path=found_files[0].file_path,
+        checksum=None,
+        date_added=datetime.now(),
+        size=999,
+        file_mtime=datetime.now(),
+    )
+    found_files[0] = new_file
+
+    with pytest.raises(sqlite3.IntegrityError):
+        add_found_files(cursor, [new_file, ])
+
+
+def test_apply_cached_checksums_to_found_files(cursor, tmp_path):
+    found_files = list(fake_found_files(tmp_path))
+
+    add_found_files(cursor, found_files)
+    commit_found_files(cursor)
+
+    clear_table(cursor, 'found_files')
+    add_found_files(cursor, found_files)
+    cursor.execute("UPDATE found_files SET checksum=null")
+
+    apply_cached_checksums_to_found_files(cursor)
+
+    # Checksum is set to the cached value
+    cursor.execute("SELECT file_path, checksum FROM found_files")
+    assert sorted(cursor.fetchall()) == sorted([
+        (str(file.file_path), file.checksum) for file in found_files
+    ])
+
+
+def test_apply_cached_checksums_to_found_files_file_has_changed(cursor, tmp_path):
+    found_files = list(fake_found_files(tmp_path))
+
+    add_found_files(cursor, found_files)
+    commit_found_files(cursor)
+
+    clear_table(cursor, 'found_files')
+    found_files = list(fake_found_files(tmp_path))  # New, different date_updated
+    add_found_files(cursor, found_files)
+    cursor.execute("UPDATE found_files SET checksum=null")
+
+    apply_cached_checksums_to_found_files(cursor)
+
+    # Checksum is not set to the cached value, because the modified date differes
+    cursor.execute("SELECT file_path, checksum FROM found_files")
+    assert sorted(cursor.fetchall()) == sorted([
+        (str(file.file_path), None) for file in found_files
+    ])
+
+
+def test_fill_missing_found_file_checksums(cursor, tmp_path):
+    found_files = list(fake_found_files(tmp_path))
+    add_found_files(cursor, found_files)
+    cursor.execute('UPDATE found_files SET checksum=NULL')
+    fill_missing_found_file_checksums(cursor)
+
+    cursor.execute("SELECT file_path, checksum FROM found_files")
+    assert sorted(cursor.fetchall()) == sorted([
+        (str(file.file_path), file.checksum) for file in found_files
+    ])
+
+
+def test_commit_found_files(cursor, tmp_path):
+    found_files = list(fake_found_files(tmp_path))
+
+    add_found_files(cursor, found_files)
+    commit_found_files(cursor)
+    cursor.execute('SELECT file_path, size, file_mtime, checksum FROM timeline_files')
+    assert sorted(cursor.fetchall()) == sorted([
+        (
+            str(file.file_path),
+            file.size,
+            file.file_mtime.replace(tzinfo=None),
+            file.checksum
+        ) for file in found_files
+    ])
+
+    assert_result_count(cursor, 'SELECT COUNT(*) FROM found_files', 0)
+
+
+def test_add_timeline_entries(cursor, tmp_path):
+    timeline_files = fake_found_files(tmp_path)
     timeline_entries = fake_timeline_entries()
-    add_timeline_files(cursor, timeline_files)
+    add_found_files(cursor, timeline_files)
     add_timeline_entries(cursor, timeline_entries)
 
     cursor.execute("SELECT file_path, entry_type, date_start, date_end, entry_data FROM timeline_entries")
@@ -102,119 +219,3 @@ def test_add_timeline_entries(cursor):
             timeline_entries[index].date_end.replace(tzinfo=None),
             json.dumps(timeline_entries[index].data)
         )
-
-
-def test_add_timeline_files(cursor):
-    timeline_files = fake_timeline_files()
-    add_timeline_files(cursor, timeline_files)
-
-    cursor.execute("SELECT file_path, checksum, date_found, size, date_modified FROM timeline_files")
-    rows = cursor.fetchall()
-    for index, row in enumerate(rows):
-        assert row == (
-            str(timeline_files[index].file_path),
-            timeline_files[index].checksum,
-            timeline_files[index].date_found.replace(tzinfo=None),
-            timeline_files[index].size,
-            timeline_files[index].date_modified.replace(tzinfo=None),
-        )
-
-
-def test_add_timeline_files_multiple_times(cursor):
-    timeline_files = fake_timeline_files()
-    add_timeline_files(cursor, timeline_files)
-    new_file = TimelineFile(
-        file_path=Path('/path/to/file_a.txt'),
-        checksum=None,
-        date_found=datetime.now(),
-        size=999,
-        date_modified=datetime.now(),
-    )
-    timeline_files[0] = new_file
-    add_timeline_files(cursor, [new_file, ])
-
-    cursor.execute("SELECT file_path, checksum, date_found, size, date_modified FROM timeline_files")
-    rows = cursor.fetchall()
-    for index, row in enumerate(rows):
-        assert row == (
-            str(timeline_files[index].file_path),
-            timeline_files[index].checksum,
-            timeline_files[index].date_found.replace(tzinfo=None),
-            timeline_files[index].size,
-            timeline_files[index].date_modified.replace(tzinfo=None),
-        )
-
-
-def test_clear_table(cursor):
-    add_timeline_files(cursor, fake_timeline_files())
-    cursor.execute("SELECT * FROM timeline_files")
-    assert len(cursor.fetchall()) > 0
-    clear_table(cursor, 'timeline_files')
-    cursor.execute("SELECT * FROM timeline_files")
-    assert len(cursor.fetchall()) == 0
-
-
-def test_update_checksum_cache(cursor):
-    timeline_files = fake_timeline_files()
-    add_timeline_files(cursor, timeline_files)
-
-    # Populate checksum cache
-    update_checksum_cache(cursor)
-    cursor.execute('SELECT file_path, size, date_modified, checksum FROM checksum_cache')
-    assert cursor.fetchall() == [
-        (
-            str(timeline_files[2].file_path),
-            timeline_files[2].size,
-            timeline_files[2].date_modified.replace(tzinfo=None),
-            timeline_files[2].checksum
-        ),
-    ]
-
-
-def test_add_cached_checksum_to_timeline_files(cursor):
-    add_timeline_files(cursor, fake_timeline_files())
-
-    cursor.execute("SELECT checksum FROM timeline_files WHERE checksum IS NOT null")
-    assert len(cursor.fetchall()) == 1
-
-    # Cache is empty, no effect
-    add_cached_checksum_to_timeline_files(cursor)
-    cursor.execute("SELECT checksum FROM timeline_files WHERE checksum IS NOT null")
-    assert len(cursor.fetchall()) == 1
-
-    update_checksum_cache(cursor)
-    assert len(cursor.execute('SELECT * FROM checksum_cache').fetchall()) == 1
-    cursor.execute("UPDATE timeline_files SET checksum=null")
-    cursor.execute("SELECT checksum FROM timeline_files WHERE checksum IS NOT null")
-    assert len(cursor.fetchall()) == 0
-
-    add_cached_checksum_to_timeline_files(cursor)
-    cursor.execute("SELECT checksum FROM timeline_files WHERE checksum IS NOT null")
-    assert cursor.fetchone() == ('5FI7E739THTU8R4SI7EG6QMGA6IL0CAKBI2FAPKFSA4BR8DTMQPG', )
-
-
-def test_get_timeline_files_without_checksum(cursor):
-    timeline_files = fake_timeline_files()
-    add_timeline_files(cursor, timeline_files)
-    assert sorted(get_timeline_files_without_checksum(cursor)) == sorted([
-        timeline_files[0].file_path,
-        timeline_files[1].file_path
-    ])
-
-
-def test_set_found_file_checksums(cursor):
-    timeline_files = fake_timeline_files()
-    add_timeline_files(cursor, timeline_files)
-    assert len(get_timeline_files_without_checksum(cursor)) == 2
-
-    set_found_file_checksums(cursor, (
-        (timeline_files[1].file_path, 'TEST_CHECKSUM_A'),
-        (timeline_files[2].file_path, 'TEST_CHECKSUM_B'),
-    ))
-
-    assert len(get_timeline_files_without_checksum(cursor)) == 1
-    cursor.execute("SELECT file_path, checksum FROM timeline_files WHERE checksum IS NOT null")
-    assert sorted(cursor.fetchall()) == sorted([
-        (str(timeline_files[1].file_path), 'TEST_CHECKSUM_A'),
-        (str(timeline_files[2].file_path), 'TEST_CHECKSUM_B'),
-    ])

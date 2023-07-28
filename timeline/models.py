@@ -48,6 +48,6 @@ class TimelineEntry:
 class TimelineFile:
     file_path: Path
     checksum: str
-    date_found: datetime
-    date_modified: datetime
+    date_added: datetime
+    file_mtime: datetime
     size: int

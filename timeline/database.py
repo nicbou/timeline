@@ -1,3 +1,4 @@
+from timeline.filesystem import get_checksum
 from pathlib import Path
 from timeline.models import TimelineFile, TimelineEntry
 from typing import Iterable
@@ -17,24 +18,25 @@ def clear_table(cursor, table_name):
     cursor.execute(f"DELETE FROM {table_name}")
 
 
-def create_timeline_files_table(cursor):
+def create_found_files_table(cursor):
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS timeline_files (
+        CREATE TABLE IF NOT EXISTS found_files (
             file_path TEXT PRIMARY KEY NOT NULL,
             size INTEGER,
-            date_found TIMESTAMP NOT NULL,
-            date_modified TIMESTAMP,
+            date_added TIMESTAMP NOT NULL,
+            file_mtime TIMESTAMP,
             checksum TEXT
         );
     ''')
 
 
-def create_checksum_cache_table(cursor):
+def create_timeline_files_table(cursor):
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS checksum_cache (
+        CREATE TABLE IF NOT EXISTS timeline_files (
             file_path TEXT PRIMARY KEY NOT NULL,
             size INTEGER,
-            date_modified TIMESTAMP,
+            date_added TIMESTAMP NOT NULL,
+            file_mtime TIMESTAMP,
             checksum TEXT
         );
     ''')
@@ -56,35 +58,107 @@ def create_timeline_entries_table(cursor):
     ''')
 
 
-def add_timeline_files(cursor, files: Iterable[TimelineFile]):
+def add_found_files(cursor, files: Iterable[TimelineFile]):
     cursor.executemany(
         '''
-        INSERT INTO timeline_files (
+        INSERT INTO found_files (
             file_path,
             checksum,
-            date_found,
-            date_modified,
+            date_added,
+            file_mtime,
             size
         )
         VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT(file_path) DO UPDATE
-        SET
-            checksum=excluded.checksum,
-            date_found=excluded.date_found,
-            date_modified=excluded.date_modified,
-            size=excluded.size
         ''',
         [
             (
                 str(file.file_path),
                 file.checksum,
-                file.date_found,
-                file.date_modified,
+                file.date_added,
+                file.file_mtime,
                 file.size,
             )
             for file in files
         ],
     )
+
+
+def apply_cached_checksums_to_found_files(cursor):
+    """
+    Apply existing checksums from timeline_files to found_files. This avoids
+    repeatedly calculating the same checksums.
+    """
+    cursor.execute('''
+        UPDATE found_files
+        SET checksum = timeline.checksum
+        FROM (
+            SELECT checksum, file_path, size, file_mtime
+            FROM timeline_files
+        ) AS timeline
+        WHERE
+            found_files.checksum IS NULL
+            AND timeline.checksum IS NOT NULL
+            AND found_files.file_path=timeline.file_path
+            AND found_files.size=timeline.size
+            AND found_files.file_mtime=timeline.file_mtime
+    ''')
+    return cursor.rowcount
+
+
+def fill_missing_found_file_checksums(cursor):
+    """
+    Calculate and set the checksum of all found_files that don't have one.
+    """
+    cursor.execute('''
+        SELECT file_path FROM found_files WHERE checksum IS NULL
+    ''')
+
+    cursor.executemany(
+        '''
+        UPDATE found_files
+        SET checksum = :checksum
+        WHERE file_path = :file_path
+        ''',
+        [
+            {
+                'checksum': get_checksum(Path(row[0])),
+                'file_path': row[0],
+            }
+            for row in cursor.fetchall()
+        ]
+    )
+
+
+def commit_found_files(cursor):
+    """
+    Replace timeline_files with found_files
+    """
+    # Delete timeline files that no longer exist
+    cursor.execute('''
+        DELETE FROM timeline_files
+        WHERE file_path NOT IN (
+            SELECT timeline.file_path FROM timeline_files timeline
+            LEFT JOIN found_files found
+                ON timeline.file_path = found.file_path
+                AND timeline.checksum = found.checksum
+            WHERE timeline.file_path IS NOT NULL
+        )
+    ''')
+
+    # Insert new found files into timeline files
+    cursor.execute('''
+        INSERT INTO timeline_files (
+            file_path,
+            checksum,
+            date_added,
+            file_mtime,
+            size
+        )
+        SELECT file_path, checksum, date_added, file_mtime, size
+        FROM found_files
+    ''')
+
+    clear_table(cursor, 'found_files')
 
 
 def add_timeline_entries(cursor, entries: Iterable[TimelineEntry]):
@@ -111,56 +185,3 @@ def add_timeline_entries(cursor, entries: Iterable[TimelineEntry]):
         ],
     )
 
-
-def add_cached_checksum_to_timeline_files(cursor):
-    """
-    Checksums are expensive to calculate. We build a cache of checksums instead
-    of calculating it for every file. We assume that if the path, size and mtime
-    are the same, the checksum should be the same.
-    """
-    create_checksum_cache_table(cursor)
-    cursor.execute('''
-        UPDATE timeline_files
-        SET checksum = cache.checksum
-        FROM (
-            SELECT checksum, file_path, size, date_modified
-            FROM checksum_cache
-        ) AS cache
-        WHERE timeline_files.checksum IS NULL
-        AND cache.checksum IS NOT NULL
-        AND timeline_files.file_path=cache.file_path
-        AND timeline_files.size=cache.size
-        AND timeline_files.date_modified=cache.date_modified
-    ''')
-    return cursor.rowcount
-
-
-def update_checksum_cache(cursor):
-    create_checksum_cache_table(cursor)
-    clear_table(cursor, 'checksum_cache')
-    cursor.execute('''
-        INSERT INTO checksum_cache (file_path, checksum, size, date_modified)
-        SELECT file_path, checksum, size, date_modified FROM timeline_files
-        WHERE checksum IS NOT NULL
-    ''')
-
-
-def get_timeline_files_without_checksum(cursor) -> list[Path]:
-    cursor.execute('''
-        SELECT file_path FROM timeline_files WHERE checksum IS null
-    ''')
-    return [Path(row[0]) for row in cursor.fetchall()]
-
-
-def set_found_file_checksums(cursor, file_path_checksum_tuples):
-    cursor.executemany(
-        '''
-        UPDATE timeline_files
-        SET checksum = ?
-        WHERE file_path = ?
-        ''',
-        [
-            (checksum, str(file_path))
-            for file_path, checksum in file_path_checksum_tuples
-        ]
-    )
