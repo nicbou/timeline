@@ -1,9 +1,10 @@
 from timeline.database import create_timeline_files_table, add_timeline_files, clear_table, \
     add_cached_checksum_to_timeline_files, update_checksum_cache, get_timeline_files_without_checksum, \
-    set_found_file_checksums
-from timeline.models import TimelineFile
+    set_found_file_checksums, create_timeline_entries_table, add_timeline_entries
+from timeline.models import TimelineEntry, TimelineFile, EntryType
 from datetime import datetime, timedelta
 from pathlib import Path
+import json
 import pytest
 import sqlite3
 
@@ -37,13 +38,70 @@ def fake_timeline_files():
     ]
 
 
+def fake_timeline_entries():
+    now = datetime.now().astimezone()
+    last_week = now - timedelta(days=7)
+    last_month = now - timedelta(days=30)
+
+    return [
+        TimelineEntry(
+            file_path=Path('/path/to/file_a.txt'),
+            entry_type=EntryType.IMAGE,
+            date_start=last_month,
+            date_end=last_month,
+            data={
+                'size': [640, 480],
+                'location': [52.44, 49.44],
+                'description': 'A man sitting on a treestump'
+            },
+        ),
+        TimelineEntry(
+            file_path=Path('/path/to/file_b.txt'),
+            entry_type=EntryType.MARKDOWN,
+            date_start=last_month,
+            date_end=last_week,
+            data={
+                'content': '# This is my journal\n\nIt was a dark and stormy night...'
+            },
+        ),
+        TimelineEntry(
+            file_path=Path('/path/to/file_b.txt'),
+            entry_type=EntryType.MARKDOWN,
+            date_start=last_week,
+            date_end=now,
+            data={
+                'content': 'All quiet on the western front'
+            },
+        ),
+    ]
+
+
 @pytest.fixture
 def cursor():
     connection = sqlite3.connect(':memory:', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
     cursor = connection.cursor()
     create_timeline_files_table(cursor)
+    create_timeline_entries_table(cursor)
     yield cursor
     connection.close()
+
+
+def test_add_timeline_entries(cursor):
+    timeline_files = fake_timeline_files()
+    timeline_entries = fake_timeline_entries()
+    add_timeline_files(cursor, timeline_files)
+    add_timeline_entries(cursor, timeline_entries)
+
+    cursor.execute("SELECT file_path, entry_type, date_start, date_end, entry_data FROM timeline_entries")
+    rows = cursor.fetchall()
+    for index, row in enumerate(rows):
+        assert row == (
+            str(timeline_entries[index].file_path),
+            str(timeline_entries[index].entry_type),
+            timeline_entries[index].date_start.replace(tzinfo=None),
+            timeline_entries[index].date_end.replace(tzinfo=None),
+            json.dumps(timeline_entries[index].data)
+        )
 
 
 def test_add_timeline_files(cursor):

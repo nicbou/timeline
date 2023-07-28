@@ -1,6 +1,7 @@
 from pathlib import Path
-from timeline.models import TimelineFile
-from typings import Iterable
+from timeline.models import TimelineFile, TimelineEntry
+from typing import Iterable
+import json
 import sqlite3
 
 
@@ -39,6 +40,22 @@ def create_checksum_cache_table(cursor):
     ''')
 
 
+def create_timeline_entries_table(cursor):
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS timeline_entries (
+            file_path TEXT NOT NULL,
+            entry_type TEXT NOT NULL,
+            date_start TIMESTAMP NOT NULL,
+            date_end TIMESTAMP NOT NULL,
+            entry_data TEXT NOT NULL,
+            FOREIGN KEY (file_path)
+                REFERENCES timeline_files (file_path)
+                ON UPDATE RESTRICT
+                ON DELETE RESTRICT
+        );
+    ''')
+
+
 def add_timeline_files(cursor, files: Iterable[TimelineFile]):
     cursor.executemany(
         '''
@@ -66,6 +83,31 @@ def add_timeline_files(cursor, files: Iterable[TimelineFile]):
                 file.size,
             )
             for file in files
+        ],
+    )
+
+
+def add_timeline_entries(cursor, entries: Iterable[TimelineEntry]):
+    cursor.executemany(
+        '''
+        INSERT INTO timeline_entries (
+            file_path,
+            entry_type,
+            date_start,
+            date_end,
+            entry_data
+        )
+        VALUES (?, ?, ?, ?, ?)
+        ''',
+        [
+            (
+                str(entry.file_path),
+                str(entry.entry_type),
+                entry.date_start,
+                entry.date_end,
+                json.dumps(entry.data)
+            )
+            for entry in entries
         ],
     )
 
