@@ -1,10 +1,9 @@
-from timeline.database import create_timeline_files_table, add_found_files, clear_table, \
+from timeline.database import create_timeline_files_table, add_found_files, clear_table, get_connection, \
     apply_cached_checksums_to_found_files, commit_found_files, fill_missing_found_file_checksums, \
     create_timeline_entries_table, add_timeline_entries, create_found_files_table
 from timeline.filesystem import get_checksum
 from timeline.models import TimelineEntry, TimelineFile, EntryType
 from datetime import datetime, timedelta
-from pathlib import Path
 import json
 import pytest
 import sqlite3
@@ -20,7 +19,7 @@ def fake_found_files(tmp_path):
         tmp_path / 'file_c.text',
     ]
 
-    dates_modified = [
+    file_mtimes = [
         now,
         now,
         yesterday,
@@ -36,18 +35,18 @@ def fake_found_files(tmp_path):
             checksum=checksum,
             date_added=now,
             size=file_path.stat().st_size,
-            file_mtime=dates_modified[index],
+            file_mtime=file_mtimes[index],
         )
 
 
-def fake_timeline_entries():
+def fake_timeline_entries(tmp_path):
     now = datetime.now().astimezone()
     last_week = now - timedelta(days=7)
     last_month = now - timedelta(days=30)
 
     return [
         TimelineEntry(
-            file_path=Path('/path/to/file_a.txt'),
+            file_path=tmp_path / 'file_a.text',
             entry_type=EntryType.IMAGE,
             date_start=last_month,
             date_end=last_month,
@@ -58,7 +57,7 @@ def fake_timeline_entries():
             },
         ),
         TimelineEntry(
-            file_path=Path('/path/to/file_b.txt'),
+            file_path=tmp_path / 'file_b.text',
             entry_type=EntryType.MARKDOWN,
             date_start=last_month,
             date_end=last_week,
@@ -67,7 +66,7 @@ def fake_timeline_entries():
             },
         ),
         TimelineEntry(
-            file_path=Path('/path/to/file_b.txt'),
+            file_path=tmp_path / 'file_b.text',
             entry_type=EntryType.MARKDOWN,
             date_start=last_week,
             date_end=now,
@@ -84,13 +83,14 @@ def assert_result_count(cursor, query, count):
 
 
 @pytest.fixture
-def cursor():
-    connection = sqlite3.connect(':memory:', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+def cursor(tmp_path):
+    connection = get_connection(tmp_path / 'database.db')
     cursor = connection.cursor()
-    create_found_files_table(cursor)
-    create_timeline_files_table(cursor)
-    create_timeline_entries_table(cursor)
+    create_found_files_table(connection)
+    create_timeline_files_table(connection)
+    create_timeline_entries_table(connection)
     yield cursor
+    cursor.close()
     connection.close()
 
 
@@ -190,26 +190,194 @@ def test_commit_found_files(cursor, tmp_path):
 
     add_found_files(cursor, found_files)
     commit_found_files(cursor)
-    cursor.execute('SELECT file_path, size, file_mtime, checksum FROM timeline_files')
+    cursor.execute('SELECT file_path, size, file_mtime, checksum, date_processed FROM timeline_files')
     assert sorted(cursor.fetchall()) == sorted([
         (
             str(file.file_path),
             file.size,
             file.file_mtime.replace(tzinfo=None),
-            file.checksum
+            file.checksum,
+            None
         ) for file in found_files
     ])
 
     assert_result_count(cursor, 'SELECT COUNT(*) FROM found_files', 0)
 
 
-def test_add_timeline_entries(cursor, tmp_path):
-    timeline_files = fake_found_files(tmp_path)
-    timeline_entries = fake_timeline_entries()
-    add_found_files(cursor, timeline_files)
+def test_commit_found_files_handle_removed(cursor, tmp_path):
+    found_files = list(fake_found_files(tmp_path))
+
+    add_found_files(cursor, found_files)
+    commit_found_files(cursor)
+    cursor.execute('SELECT file_path, size, file_mtime, checksum, date_processed FROM timeline_files')
+    assert sorted(cursor.fetchall()) == sorted([
+        (
+            str(file.file_path),
+            file.size,
+            file.file_mtime.replace(tzinfo=None),
+            file.checksum,
+            None
+        ) for file in found_files
+    ])
+
+    # Do it again, with one found_file removed
+    clear_table(cursor, 'found_files')
+    found_files.pop()
+    add_found_files(cursor, found_files)
+    commit_found_files(cursor)
+
+    cursor.execute('SELECT file_path, size, file_mtime, checksum, date_processed FROM timeline_files')
+    assert sorted(cursor.fetchall()) == sorted([
+        (
+            str(file.file_path),
+            file.size,
+            file.file_mtime.replace(tzinfo=None),
+            file.checksum,
+            None
+        ) for file in found_files
+    ])
+
+    assert_result_count(cursor, 'SELECT COUNT(*) FROM found_files', 0)
+
+
+def test_commit_found_files_handle_existing_checksum(cursor, tmp_path):
+    found_files = list(fake_found_files(tmp_path))
+    timeline_entries = fake_timeline_entries(tmp_path)
+
+    add_found_files(cursor, found_files)
+    commit_found_files(cursor)
     add_timeline_entries(cursor, timeline_entries)
 
-    cursor.execute("SELECT file_path, entry_type, date_start, date_end, entry_data FROM timeline_entries")
+    # Do it again, with different date_added and file_mtime
+    clear_table(cursor, 'found_files')
+    new_found_files = list(fake_found_files(tmp_path))  # Same files, new date_added and mtime
+    add_found_files(cursor, new_found_files)
+    commit_found_files(cursor)
+
+    # The timeline_file row gets updated with the new date_added and mtime
+    cursor.execute('SELECT file_path, size, file_mtime, checksum, date_processed FROM timeline_files')
+    assert sorted(cursor.fetchall()) == sorted([
+        (
+            str(file.file_path),
+            file.size,
+            file.file_mtime.replace(tzinfo=None),
+            file.checksum,
+            None
+        ) for file in new_found_files
+    ])
+
+    # Timeline entries should still be there (for found_files[0] which was replaced by new_file)
+    cursor.execute('''
+        SELECT file_path, entry_type, date_start, date_end, entry_data FROM timeline_entries
+    ''')
+    assert sorted(cursor.fetchall()) == sorted([
+        (
+            str(entry.file_path),
+            str(entry.entry_type),
+            entry.date_start.replace(tzinfo=None),
+            entry.date_end.replace(tzinfo=None),
+            json.dumps(entry.data),
+        ) for entry in timeline_entries
+    ])
+
+
+def test_commit_found_files_handle_new_checksum(cursor, tmp_path):
+    found_files = list(fake_found_files(tmp_path))
+    timeline_entries = fake_timeline_entries(tmp_path)
+
+    add_found_files(cursor, found_files)
+    commit_found_files(cursor)
+    add_timeline_entries(cursor, timeline_entries)
+
+    # This timeline_file has entries
+    cursor.execute(
+        'SELECT COUNT(*) FROM timeline_entries WHERE file_path=?',
+        [str(found_files[0].file_path), ],
+    )
+    assert cursor.fetchone()[0] == 1
+
+    # Update the file (same path, new checksum), and add it back to the timeline
+    with found_files[0].file_path.open('w') as file:
+        file.write('New file!')
+    checksum = get_checksum(found_files[0].file_path)
+    new_file = TimelineFile(
+        file_path=found_files[0].file_path,
+        checksum=checksum,
+        date_added=found_files[0].date_added,
+        size=found_files[0].size,
+        file_mtime=found_files[0].file_mtime,
+    )
+    new_found_files = [
+        found_files[1],
+        found_files[2],
+        new_file
+    ]
+
+    add_found_files(cursor, new_found_files)
+    commit_found_files(cursor)
+
+    # found_files[0] with the old checksum is removed, new_file is added
+    cursor.execute('SELECT file_path, size, file_mtime, checksum, date_processed FROM timeline_files')
+    assert sorted(cursor.fetchall()) == sorted([
+        (
+            str(file.file_path),
+            file.size,
+            file.file_mtime.replace(tzinfo=None),
+            file.checksum,
+            None
+        ) for file in new_found_files
+    ])
+
+    # This timeline file no longer has entries. The entries were deleted when the
+    # file changed
+    cursor.execute(
+        'SELECT COUNT(*) FROM timeline_entries WHERE file_path=?',
+        [str(new_file.file_path), ],
+    )
+    assert cursor.fetchone()[0] == 0
+
+
+def test_commit_found_files_reset_date_processed(cursor, tmp_path):
+    found_files = list(fake_found_files(tmp_path))
+
+    add_found_files(cursor, found_files)
+    commit_found_files(cursor)
+
+    # Mark all as processed
+    date_processed = datetime.now() - timedelta(days=7)
+    cursor.execute('UPDATE timeline_files SET date_processed=?', [date_processed, ])
+
+    # Pretend that found_files[0] was updated and has a new checksum
+    with found_files[0].file_path.open('w') as file:
+        file.write('This is a different file now')
+    found_files[0] = TimelineFile(
+        file_path=found_files[0].file_path,
+        checksum=get_checksum(found_files[0].file_path),  # New checksum
+        date_added=found_files[0].date_added,
+        file_mtime=found_files[0].file_mtime,
+        size=found_files[0].size,
+    )
+    add_found_files(cursor, found_files)
+    commit_found_files(cursor)
+
+    cursor.execute('SELECT file_path, date_processed FROM timeline_files')
+    assert sorted(cursor.fetchall()) == sorted([
+        (str(found_files[0].file_path), None),  # Reset
+        (str(found_files[1].file_path), date_processed),  # Unchanged
+        (str(found_files[2].file_path), date_processed),  # Unchanged
+    ])
+
+
+def test_add_timeline_entries(cursor, tmp_path):
+    found_files = fake_found_files(tmp_path)
+    timeline_entries = fake_timeline_entries(tmp_path)
+    add_found_files(cursor, found_files)
+    commit_found_files(cursor)
+    add_timeline_entries(cursor, timeline_entries)
+
+    cursor.execute('''
+        SELECT file_path, entry_type, date_start, date_end, entry_data FROM timeline_entries
+    ''')
     rows = cursor.fetchall()
     for index, row in enumerate(rows):
         assert row == (
@@ -217,5 +385,14 @@ def test_add_timeline_entries(cursor, tmp_path):
             str(timeline_entries[index].entry_type),
             timeline_entries[index].date_start.replace(tzinfo=None),
             timeline_entries[index].date_end.replace(tzinfo=None),
-            json.dumps(timeline_entries[index].data)
+            json.dumps(timeline_entries[index].data),
         )
+
+
+def test_add_timeline_entries_invalid_path(cursor, tmp_path):
+    clear_table(cursor, 'found_files')
+    clear_table(cursor, 'timeline_entries')
+
+    timeline_entries = fake_timeline_entries(tmp_path)
+    with pytest.raises(sqlite3.IntegrityError):
+        add_timeline_entries(cursor, timeline_entries)

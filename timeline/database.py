@@ -6,12 +6,13 @@ import json
 import sqlite3
 
 
-def get_cursor(db_path: Path):
+def get_connection(db_path: Path):
     connection = sqlite3.connect(
-        'timeline.db',
+        db_path,
         detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
     )
-    return connection.cursor()
+    connection.execute('PRAGMA foreign_keys = ON')
+    return connection
 
 
 def clear_table(cursor, table_name):
@@ -36,6 +37,7 @@ def create_timeline_files_table(cursor):
             file_path TEXT PRIMARY KEY NOT NULL,
             size INTEGER,
             date_added TIMESTAMP NOT NULL,
+            date_processed TIMESTAMP,
             file_mtime TIMESTAMP,
             checksum TEXT
         );
@@ -45,15 +47,11 @@ def create_timeline_files_table(cursor):
 def create_timeline_entries_table(cursor):
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS timeline_entries (
-            file_path TEXT NOT NULL,
+            file_path TEXT NOT NULL REFERENCES timeline_files (file_path) ON DELETE CASCADE,
             entry_type TEXT NOT NULL,
             date_start TIMESTAMP NOT NULL,
             date_end TIMESTAMP NOT NULL,
-            entry_data TEXT NOT NULL,
-            FOREIGN KEY (file_path)
-                REFERENCES timeline_files (file_path)
-                ON UPDATE RESTRICT
-                ON DELETE RESTRICT
+            entry_data TEXT NOT NULL
         );
     ''')
 
@@ -131,31 +129,38 @@ def fill_missing_found_file_checksums(cursor):
 
 def commit_found_files(cursor):
     """
-    Replace timeline_files with found_files
+    Remove old timeline_files, add new timeline_files from found_files
     """
+
     # Delete timeline files that no longer exist
     cursor.execute('''
         DELETE FROM timeline_files
         WHERE file_path NOT IN (
-            SELECT timeline.file_path FROM timeline_files timeline
-            LEFT JOIN found_files found
+            SELECT timeline.file_path AS file_path FROM timeline_files timeline
+            INNER JOIN found_files found
                 ON timeline.file_path = found.file_path
                 AND timeline.checksum = found.checksum
-            WHERE timeline.file_path IS NOT NULL
         )
     ''')
 
-    # Insert new found files into timeline files
+    # Insert new found files into timeline files, updating when possible,
+    # so that relationships to timeline_entries are preserved
     cursor.execute('''
         INSERT INTO timeline_files (
             file_path,
             checksum,
             date_added,
             file_mtime,
-            size
+            size,
+            date_processed
         )
-        SELECT file_path, checksum, date_added, file_mtime, size
-        FROM found_files
+        SELECT file_path, checksum, date_added, file_mtime, size, NULL FROM found_files WHERE true
+        ON CONFLICT (file_path) DO UPDATE
+            SET
+                checksum = excluded.checksum,
+                date_added = excluded.date_added,
+                file_mtime = excluded.file_mtime,
+                date_processed = date_processed
     ''')
 
     clear_table(cursor, 'found_files')
@@ -184,4 +189,3 @@ def add_timeline_entries(cursor, entries: Iterable[TimelineEntry]):
             for entry in entries
         ],
     )
-
