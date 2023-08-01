@@ -20,8 +20,8 @@ if __name__ == '__main__':
     )
 
     generate(
-        [Path('/Users/nicolas/Documents/Artefacts'), ],
-        includerules=['*.txt', ],
-        ignorerules=[],
-        metadata_path=Path('/Users/nicolas/Downloads'),
+        [Path('/Users/nicolas/Documents/Projects/AllAboutBerlin'), ],
+        includerules=['*',],
+        ignorerules=['.git/*', ],
+        metadata_path=Path('/Users/nicolas/Downloads/timeline'),
     )

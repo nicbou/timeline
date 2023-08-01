@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from timeline.models import TimelineFile, TimelineEntry, EntryType
 from typing import Iterable
+import markdown
 import re
 
 
@@ -51,6 +52,36 @@ def process_text(file: TimelineFile, entries: Iterable[TimelineEntry]):
                     date_end=date_end,
                     data={
                         'content': file_handle.read(),
+                    }
+                )
+            )
+    return entries
+
+
+markdown_parser = markdown.Markdown(
+    output_format='html',
+    extensions=[
+        'fenced_code',
+        'meta',
+        'tables',
+        'smarty',
+        'codehilite',
+    ]
+)
+
+
+def process_markdown(file: TimelineFile, entries: Iterable[TimelineEntry]):
+    if file.file_path.suffix.lower() == '.md':
+        with file.file_path.open() as file_handle:
+            date_start, date_end = dates_from_file(file.file_path)
+            entries.append(
+                TimelineEntry(
+                    file_path=file.file_path,
+                    entry_type=EntryType.MARKDOWN,
+                    date_start=date_start,
+                    date_end=date_end,
+                    data={
+                        'content': markdown_parser.reset().convert(file_handle.read()),
                     }
                 )
             )

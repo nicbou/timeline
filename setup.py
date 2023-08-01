@@ -16,6 +16,7 @@ setup(
     scripts=['timeline/bin/timeline'],
     python_requires='>=3.11',
     install_requires=[
+        'Markdown==3.4.3',
     ],
     zip_safe=False,
 )

@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 from timeline.database import create_found_files_table, create_timeline_files_table, create_timeline_entries_table
-from timeline.file_processors import process_text
+from timeline.file_processors import process_text, process_markdown
 from timeline.filesystem import get_files_in_paths
 from timeline.models import TimelineFile, TimelineEntry
 from typing import Iterable
@@ -25,6 +25,7 @@ def get_timeline_files_in_paths(paths, includerules, ignorerules) -> Iterable[Ti
 def process_timeline_file(cursor, file: TimelineFile, metadata_path: Path) -> Iterable[TimelineEntry]:
     timeline_file_processors = [
         process_text,
+        process_markdown,
     ]
 
     entries = []
