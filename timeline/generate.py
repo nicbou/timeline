@@ -30,7 +30,7 @@ def process_timeline_file(cursor, file: TimelineFile, metadata_path: Path) -> It
 
     entries = []
     for process_function in timeline_file_processors:
-        entries = process_function(file, entries)
+        entries = process_function(file, entries, metadata_path)
 
     db.delete_timeline_entries(cursor, file.file_path)
     db.add_timeline_entries(cursor, entries)

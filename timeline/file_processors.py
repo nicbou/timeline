@@ -4,6 +4,7 @@ from timeline.models import TimelineFile, TimelineEntry, EntryType
 from typing import Iterable
 import markdown
 import re
+import shutil
 
 
 date_regex = r'(19\d\d|20\d\d)-([0][1-9]|1[0-2])-([0-2][1-9]|[1-3]0|3[01])'
@@ -40,21 +41,23 @@ def dates_from_file(file_path: Path):
     return date_start, date_end
 
 
-def process_text(file: TimelineFile, entries: Iterable[TimelineEntry]):
+def process_text(file: TimelineFile, entries: Iterable[TimelineEntry], metadata_path: Path) -> Iterable[TimelineEntry]:
     if file.file_path.suffix.lower() == '.txt':
-        with file.file_path.open() as file_handle:
-            date_start, date_end = dates_from_file(file.file_path)
-            entries.append(
-                TimelineEntry(
-                    file_path=file.file_path,
-                    entry_type=EntryType.TEXT,
-                    date_start=date_start,
-                    date_end=date_end,
-                    data={
-                        'content': file_handle.read(),
-                    }
-                )
+        output_path = metadata_path / file.checksum
+        output_path.mkdir(parents=True, exist_ok=True)
+        if not (output_path / 'content.txt').exists():
+            shutil.copy(file.file_path, output_path / 'content.txt')
+
+        date_start, date_end = dates_from_file(file.file_path)
+        entries.append(
+            TimelineEntry(
+                file_path=file.file_path,
+                entry_type=EntryType.TEXT,
+                date_start=date_start,
+                date_end=date_end,
+                data={}
             )
+        )
     return entries
 
 
@@ -70,19 +73,26 @@ markdown_parser = markdown.Markdown(
 )
 
 
-def process_markdown(file: TimelineFile, entries: Iterable[TimelineEntry]):
+def process_markdown(file: TimelineFile, entries: Iterable[TimelineEntry], metadata_path: Path) -> Iterable[TimelineEntry]:
     if file.file_path.suffix.lower() == '.md':
-        with file.file_path.open() as file_handle:
-            date_start, date_end = dates_from_file(file.file_path)
-            entries.append(
-                TimelineEntry(
-                    file_path=file.file_path,
-                    entry_type=EntryType.MARKDOWN,
-                    date_start=date_start,
-                    date_end=date_end,
-                    data={
-                        'content': markdown_parser.reset().convert(file_handle.read()),
-                    }
-                )
+        output_path = metadata_path / file.checksum
+        output_path.mkdir(parents=True, exist_ok=True)
+        rendered_path = output_path / 'content.html'
+
+        if not rendered_path.exists():
+            markdown_parser.convertFile(
+                input=str(file.file_path),
+                output=str(rendered_path)
             )
+
+        date_start, date_end = dates_from_file(file.file_path)
+        entries.append(
+            TimelineEntry(
+                file_path=file.file_path,
+                entry_type=EntryType.TEXT,
+                date_start=date_start,
+                date_end=date_end,
+                data={}
+            )
+        )
     return entries
