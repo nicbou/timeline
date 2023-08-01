@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+from pathlib import Path
+from timeline.generate import generate
+import argparse
+import logging
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        prog='timeline',
+        description='Timeline generator',
+        epilog='Made with ❤️ in Berlin'
+    )
+    args = parser.parse_args()
+
+    logging.basicConfig(
+        datefmt='%Y-%m-%d %H:%M:%S',
+        format='[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s',
+        level=logging.INFO,
+    )
+
+    generate(
+        [Path('/Users/nicolas/Documents/Artefacts'), ],
+        includerules=['*.txt', ],
+        ignorerules=[],
+        metadata_path=Path('/Users/nicolas/Downloads'),
+    )

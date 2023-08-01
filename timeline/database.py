@@ -1,5 +1,6 @@
-from timeline.filesystem import get_checksum
+from datetime import datetime
 from pathlib import Path
+from timeline.filesystem import get_checksum
 from timeline.models import TimelineFile, TimelineEntry
 from typing import Iterable
 import json
@@ -50,7 +51,7 @@ def create_timeline_entries_table(cursor):
             file_path TEXT NOT NULL REFERENCES timeline_files (file_path) ON DELETE CASCADE,
             entry_type TEXT NOT NULL,
             date_start TIMESTAMP NOT NULL,
-            date_end TIMESTAMP NOT NULL,
+            date_end TIMESTAMP,
             entry_data TEXT NOT NULL
         );
     ''')
@@ -100,7 +101,6 @@ def apply_cached_checksums_to_found_files(cursor):
             AND found_files.size=timeline.size
             AND found_files.file_mtime=timeline.file_mtime
     ''')
-    return cursor.rowcount
 
 
 def fill_missing_found_file_checksums(cursor):
@@ -166,6 +166,34 @@ def commit_found_files(cursor):
     clear_table(cursor, 'found_files')
 
 
+def update_file_database(cursor, timeline_files: Iterable[TimelineFile]):
+    add_found_files(cursor, timeline_files)
+    apply_cached_checksums_to_found_files(cursor)
+    fill_missing_found_file_checksums(cursor)
+    commit_found_files(cursor)
+
+
+def get_unprocessed_timeline_files(cursor):
+    cursor.execute('''
+        SELECT
+            file_path,
+            checksum,
+            date_added,
+            file_mtime,
+            size,
+            date_processed
+        FROM timeline_files WHERE date_processed IS NULL
+    ''')
+    for row in cursor.fetchall():
+        yield TimelineFile(
+            file_path=Path(row[0]),
+            checksum=row[1],
+            date_added=row[2],
+            file_mtime=row[3],
+            size=row[4]
+        )
+
+
 def add_timeline_entries(cursor, entries: Iterable[TimelineEntry]):
     cursor.executemany(
         '''
@@ -188,4 +216,18 @@ def add_timeline_entries(cursor, entries: Iterable[TimelineEntry]):
             )
             for entry in entries
         ],
+    )
+
+
+def delete_timeline_entries(cursor, file_path: Path):
+    cursor.execute(
+        "DELETE FROM timeline_entries WHERE file_path=?",
+        [str(file_path), ]
+    )
+
+
+def mark_timeline_file_as_processed(cursor, file_path: Path):
+    cursor.execute(
+        "UPDATE timeline_files SET date_processed=? WHERE file_path=?",
+        [datetime.now(), str(file_path), ]
     )
