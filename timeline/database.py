@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from timeline.filesystem import get_checksum
-from timeline.models import TimelineFile, TimelineEntry
+from timeline.models import TimelineFile, TimelineEntry, EntryType
 from typing import Iterable
 import json
 import sqlite3
@@ -55,6 +55,12 @@ def create_timeline_entries_table(cursor):
             entry_data TEXT NOT NULL
         );
     ''')
+
+
+def create_database(cursor):
+    create_found_files_table(cursor)
+    create_timeline_files_table(cursor)
+    create_timeline_entries_table(cursor)
 
 
 def add_found_files(cursor, files: Iterable[TimelineFile]):
@@ -209,7 +215,7 @@ def add_timeline_entries(cursor, entries: Iterable[TimelineEntry]):
         [
             (
                 str(entry.file_path),
-                str(entry.entry_type),
+                entry.entry_type.value,
                 entry.date_start,
                 entry.date_end,
                 json.dumps(entry.data)
@@ -217,6 +223,58 @@ def add_timeline_entries(cursor, entries: Iterable[TimelineEntry]):
             for entry in entries
         ],
     )
+
+
+def dates_with_entries(cursor):
+    cursor.execute('''
+        SELECT entries.date_start, entries.date_end, files.date_processed FROM timeline_entries entries
+        JOIN timeline_files files ON entries.file_path=files.file_path
+    ''')
+    dates_with_entries = {}
+    for row in cursor.fetchall():
+        date_start = row[0].date()
+        date_end = (row[1] or row[0]).date()
+        date_processed = row[2]
+
+        days_count = (date_end - date_start).days + 1
+        date_range = [
+            date_start + timedelta(days=x) for x in range(days_count)
+        ]
+        for date_in_range in date_range:
+            if date_in_range in dates_with_entries:
+                dates_with_entries[date_in_range] = max(date_processed, dates_with_entries[date_in_range])
+            else:
+                dates_with_entries[date_in_range] = date_processed
+    return dates_with_entries
+
+
+def get_entries_for_date(cursor, timeline_date: date):
+    cursor.execute(
+        '''
+            SELECT
+                file_path,
+                entry_type,
+                date_start,
+                date_end,
+                entry_data
+            FROM timeline_entries
+            WHERE
+                (date_start>=:start AND date_start<:end)
+                OR (date_start<:start AND date_end>=:start)
+        ''',
+        {
+            'start': timeline_date,
+            'end': timeline_date + timedelta(days=1)
+        },
+    )
+    for row in cursor.fetchall():
+        yield TimelineEntry(
+            file_path=Path(row[0]),
+            entry_type=EntryType(row[1]),
+            date_start=row[2],
+            date_end=row[3],
+            data=json.loads(row[4]),
+        )
 
 
 def delete_timeline_entries(cursor, file_path: Path):

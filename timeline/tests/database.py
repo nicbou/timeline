@@ -1,9 +1,10 @@
 from timeline.database import create_timeline_files_table, add_found_files, clear_table, get_connection, \
     apply_cached_checksums_to_found_files, commit_found_files, fill_missing_found_file_checksums, \
-    create_timeline_entries_table, add_timeline_entries, create_found_files_table
+    create_timeline_entries_table, add_timeline_entries, create_found_files_table, dates_with_entries, \
+    get_entries_for_date
 from timeline.filesystem import get_checksum
 from timeline.models import TimelineEntry, TimelineFile, EntryType
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import json
 import pytest
 import sqlite3
@@ -40,16 +41,12 @@ def fake_found_files(tmp_path):
 
 
 def fake_timeline_entries(tmp_path):
-    now = datetime.now().astimezone()
-    last_week = now - timedelta(days=7)
-    last_month = now - timedelta(days=30)
-
     return [
         TimelineEntry(
             file_path=tmp_path / 'file_a.text',
             entry_type=EntryType.IMAGE,
-            date_start=last_month,
-            date_end=last_month,
+            date_start=datetime(2023, 7, 1),
+            date_end=datetime(2023, 7, 4),
             data={
                 'size': [640, 480],
                 'location': [52.44, 49.44],
@@ -59,8 +56,8 @@ def fake_timeline_entries(tmp_path):
         TimelineEntry(
             file_path=tmp_path / 'file_b.text',
             entry_type=EntryType.MARKDOWN,
-            date_start=last_month,
-            date_end=last_week,
+            date_start=datetime(2023, 7, 3),
+            date_end=None,
             data={
                 'content': '# This is my journal\n\nIt was a dark and stormy night...'
             },
@@ -68,8 +65,8 @@ def fake_timeline_entries(tmp_path):
         TimelineEntry(
             file_path=tmp_path / 'file_b.text',
             entry_type=EntryType.MARKDOWN,
-            date_start=last_week,
-            date_end=now,
+            date_start=datetime(2023, 7, 7),
+            date_end=datetime(2023, 7, 10, 23, 59, 59),
             data={
                 'content': 'All quiet on the western front'
             },
@@ -273,9 +270,9 @@ def test_commit_found_files_handle_existing_checksum(cursor, tmp_path):
     assert sorted(cursor.fetchall()) == sorted([
         (
             str(entry.file_path),
-            str(entry.entry_type),
+            entry.entry_type.value,
             entry.date_start.replace(tzinfo=None),
-            entry.date_end.replace(tzinfo=None),
+            entry.date_end.replace(tzinfo=None) if entry.date_end else None,
             json.dumps(entry.data),
         ) for entry in timeline_entries
     ])
@@ -382,9 +379,9 @@ def test_add_timeline_entries(cursor, tmp_path):
     for index, row in enumerate(rows):
         assert row == (
             str(timeline_entries[index].file_path),
-            str(timeline_entries[index].entry_type),
+            timeline_entries[index].entry_type.value,
             timeline_entries[index].date_start.replace(tzinfo=None),
-            timeline_entries[index].date_end.replace(tzinfo=None),
+            timeline_entries[index].date_end.replace(tzinfo=None) if timeline_entries[index].date_end else None,
             json.dumps(timeline_entries[index].data),
         )
 
@@ -396,3 +393,62 @@ def test_add_timeline_entries_invalid_path(cursor, tmp_path):
     timeline_entries = fake_timeline_entries(tmp_path)
     with pytest.raises(sqlite3.IntegrityError):
         add_timeline_entries(cursor, timeline_entries)
+
+
+def test_dates_with_entries(cursor, tmp_path):
+    found_files = fake_found_files(tmp_path)
+    timeline_entries = fake_timeline_entries(tmp_path)
+    add_found_files(cursor, found_files)
+    commit_found_files(cursor)
+    add_timeline_entries(cursor, timeline_entries)
+
+    file_a_date = datetime(2023, 9, 10, 11, 0, 0)
+    file_b_date = datetime(2022, 6, 12, 9, 10, 0)
+    cursor.executemany(
+        '''
+        UPDATE timeline_files
+        SET date_processed=?
+        WHERE file_path=?
+        ''',
+        [
+            [
+                file_a_date,
+                str(tmp_path / 'file_a.text'),
+            ],
+            [
+                file_b_date,
+                str(tmp_path / 'file_b.text'),
+            ]
+        ]
+    )
+
+    assert dates_with_entries(cursor) == {
+        date(2023, 7, 1): file_a_date,
+        date(2023, 7, 2): file_a_date,
+        date(2023, 7, 3): file_a_date,
+        date(2023, 7, 4): file_a_date,
+        date(2023, 7, 7): file_b_date,
+        date(2023, 7, 8): file_b_date,
+        date(2023, 7, 9): file_b_date,
+        date(2023, 7, 10): file_b_date,
+    }
+
+
+def test_get_entries_for_date(cursor, tmp_path):
+    found_files = fake_found_files(tmp_path)
+    timeline_entries = fake_timeline_entries(tmp_path)
+    add_found_files(cursor, found_files)
+    commit_found_files(cursor)
+    add_timeline_entries(cursor, timeline_entries)
+
+    assert list(get_entries_for_date(cursor, date(2023, 6, 30))) == []
+    assert list(get_entries_for_date(cursor, date(2023, 7, 1))) == [
+        timeline_entries[0],
+    ]
+    assert list(get_entries_for_date(cursor, date(2023, 7, 9))) == [
+        timeline_entries[2],
+    ]
+    assert list(get_entries_for_date(cursor, date(2023, 7, 10))) == [
+        timeline_entries[2],
+    ]
+    assert list(get_entries_for_date(cursor, date(2023, 7, 11))) == []

@@ -41,9 +41,9 @@ def dates_from_file(file_path: Path):
     return date_start, date_end
 
 
-def process_text(file: TimelineFile, entries: Iterable[TimelineEntry], metadata_path: Path) -> Iterable[TimelineEntry]:
+def process_text(file: TimelineFile, entries: Iterable[TimelineEntry], metadata_root: Path) -> Iterable[TimelineEntry]:
     if file.file_path.suffix.lower() == '.txt':
-        output_path = metadata_path / file.checksum
+        output_path = metadata_root / file.checksum
         output_path.mkdir(parents=True, exist_ok=True)
         if not (output_path / 'content.txt').exists():
             shutil.copy(file.file_path, output_path / 'content.txt')
@@ -73,9 +73,9 @@ markdown_parser = markdown.Markdown(
 )
 
 
-def process_markdown(file: TimelineFile, entries: Iterable[TimelineEntry], metadata_path: Path) -> Iterable[TimelineEntry]:
+def process_markdown(file: TimelineFile, entries: Iterable[TimelineEntry], metadata_root: Path) -> Iterable[TimelineEntry]:
     if file.file_path.suffix.lower() == '.md':
-        output_path = metadata_path / file.checksum
+        output_path = metadata_root / file.checksum
         output_path.mkdir(parents=True, exist_ok=True)
         rendered_path = output_path / 'content.html'
 

@@ -23,5 +23,6 @@ if __name__ == '__main__':
         [Path('/Users/nicolas/Documents/Projects/AllAboutBerlin'), ],
         includerules=['*',],
         ignorerules=['.git/*', ],
-        metadata_path=Path('/Users/nicolas/Downloads/timeline'),
+        metadata_root=Path('/Users/nicolas/Downloads/timeline/meta'),
+        output_root=Path('/Users/nicolas/Downloads/timeline/out'),
     )
