@@ -229,6 +229,7 @@ def dates_with_entries(cursor):
     cursor.execute('''
         SELECT entries.date_start, entries.date_end, files.date_processed FROM timeline_entries entries
         JOIN timeline_files files ON entries.file_path=files.file_path
+        ORDER BY date_start
     ''')
     dates_with_entries = {}
     for row in cursor.fetchall():
