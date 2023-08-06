@@ -1,10 +1,12 @@
 from datetime import datetime
 from importlib.resources import path
-from jinja2 import Environment, FileSystemLoader, select_autoescape, StrictUndefined
+from jinja2.ext import Extension
+from jinja2 import Environment, FileSystemLoader, select_autoescape, StrictUndefined, nodes
+from markupsafe import Markup
 from pathlib import Path
 from timeline.file_processors import process_text, process_markdown
 from timeline.filesystem import get_files_in_paths
-from timeline.models import TimelineFile
+from timeline.models import TimelineFile, EntryType
 from timeline import templates
 from typing import Iterable
 import logging
@@ -51,12 +53,27 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
     logging.info(f"Processed {new_file_count} new files")
 
 
-def get_template_environment(templates_root: Path):
-    return Environment(
-        loader=FileSystemLoader(str(templates_root)),
+class IncludeRawExtension(Extension):
+    tags = {"include_raw"}
+
+    def parse(self, parser):
+        lineno = parser.stream.expect("name:include_raw").lineno
+        template = parser.parse_expression()
+        result = self.call_method("_render", [template], lineno=lineno)
+        return nodes.Output([result], lineno=lineno)
+
+    def _render(self, filename):
+        return Markup(self.environment.loader.get_source(self.environment, filename)[0])
+
+
+def get_template_environment(templates_root: Path, metadata_root: Path):
+    env = Environment(
+        loader=FileSystemLoader([str(templates_root), str(metadata_root)]),
         autoescape=select_autoescape(),
+        extensions=[IncludeRawExtension],
         undefined=StrictUndefined
     )
+    return env
 
 
 def render_template(template_environment: Environment, template_path: Path, context: dict, output_path: Path):
@@ -73,16 +90,21 @@ def generate(input_paths, includerules, ignorerules, metadata_root: Path, output
     process_timeline_files(cursor, input_paths, includerules, ignorerules, metadata_root)
     connection.commit()
 
-    logging.info("Generating timeline pages")
-    template_environment = get_template_environment(path(package=templates, resource="").__enter__())
+    template_environment = get_template_environment(path(package=templates, resource="").__enter__(), metadata_root)
+    new_page_count = 0
     for day, date_processed in db.dates_with_entries(cursor).items():
-        logging.info(f"Generating page for {day.strftime('%Y-%m-%d')}")
         output_path = output_root / f"{day.strftime('%Y-%m-%d')}.html"
-
         if not output_path.exists() or date_processed.timestamp() > output_path.stat().st_mtime:
+            logging.info(f"Generating page for {day.strftime('%Y-%m-%d')}")
+            new_page_count += 1
             render_template(
                 template_environment,
                 'day.html.jinja',
-                {'entries': db.get_entries_for_date(cursor, day)},
+                {
+                    'entries': db.get_entries_for_date(cursor, day),
+                    'EntryType': EntryType,
+                },
                 output_path
             )
+
+    logging.info(f"Generated {new_page_count} date pages")

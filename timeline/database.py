@@ -253,12 +253,15 @@ def get_entries_for_date(cursor, timeline_date: date):
     cursor.execute(
         '''
             SELECT
-                file_path,
+                entries.file_path,
+                files.checksum,
                 entry_type,
                 date_start,
                 date_end,
                 entry_data
-            FROM timeline_entries
+            FROM timeline_entries entries
+            INNER JOIN timeline_files files
+                ON entries.file_path = files.file_path
             WHERE
                 (date_start>=:start AND date_start<:end)
                 OR (date_start<:start AND date_end>=:start)
@@ -271,10 +274,11 @@ def get_entries_for_date(cursor, timeline_date: date):
     for row in cursor.fetchall():
         yield TimelineEntry(
             file_path=Path(row[0]),
-            entry_type=EntryType(row[1]),
-            date_start=row[2],
-            date_end=row[3],
-            data=json.loads(row[4]),
+            checksum=row[1],
+            entry_type=EntryType(row[2]),
+            date_start=row[3],
+            date_end=row[4],
+            data=json.loads(row[5]),
         )
 
 

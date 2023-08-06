@@ -52,6 +52,7 @@ def process_text(file: TimelineFile, entries: Iterable[TimelineEntry], metadata_
         entries.append(
             TimelineEntry(
                 file_path=file.file_path,
+                checksum=file.checksum,
                 entry_type=EntryType.TEXT,
                 date_start=date_start,
                 date_end=date_end,
@@ -89,7 +90,8 @@ def process_markdown(file: TimelineFile, entries: Iterable[TimelineEntry], metad
         entries.append(
             TimelineEntry(
                 file_path=file.file_path,
-                entry_type=EntryType.TEXT,
+                checksum=file.checksum,
+                entry_type=EntryType.MARKDOWN,
                 date_start=date_start,
                 date_end=date_end,
                 data={}

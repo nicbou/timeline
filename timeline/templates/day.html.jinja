@@ -1,0 +1,12 @@
+{% extends "_layout.html" %}
+{% block body %}
+    {% for entry in entries %}
+        <div class="entry">
+            {% if entry.entry_type == EntryType.MARKDOWN %}
+                {% include_raw entry.checksum ~ "/content.html" %}
+            {% elif entry.entry_type == EntryType.TEXT %}
+                {% include_raw entry.checksum ~ "/content.txt" %}
+            {% endif %}
+        </div>
+    {% endfor %}
+{% endblock %}

@@ -44,6 +44,7 @@ def fake_timeline_entries(tmp_path):
     return [
         TimelineEntry(
             file_path=tmp_path / 'file_a.text',
+            checksum='improperly mocked value',
             entry_type=EntryType.IMAGE,
             date_start=datetime(2023, 7, 1),
             date_end=datetime(2023, 7, 4),
@@ -55,6 +56,7 @@ def fake_timeline_entries(tmp_path):
         ),
         TimelineEntry(
             file_path=tmp_path / 'file_b.text',
+            checksum='improperly mocked value',
             entry_type=EntryType.MARKDOWN,
             date_start=datetime(2023, 7, 3),
             date_end=None,
@@ -64,6 +66,7 @@ def fake_timeline_entries(tmp_path):
         ),
         TimelineEntry(
             file_path=tmp_path / 'file_b.text',
+            checksum='improperly mocked value',
             entry_type=EntryType.MARKDOWN,
             date_start=datetime(2023, 7, 7),
             date_end=datetime(2023, 7, 10, 23, 59, 59),
