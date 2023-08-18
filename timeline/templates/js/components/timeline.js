@@ -6,6 +6,7 @@ import SpinnerComponent from './spinner.js';
 import TimelineActivityEntry from './entries/activity.js';
 import TimelineCommitEntry from './entries/commit.js';
 import TimelineGalleryEntry from './entries/gallery.js';
+import TimelineHtmlEntry from './entries/html.js';
 import TimelineJournalEntry from './entries/journal.js'
 import TimelineMessageEntry from './entries/message.js';
 import TimelineNav from './timeline-nav.js';
@@ -143,6 +144,9 @@ export default Vue.component('timeline', {
       }
       else if(t === 'commit') {
         return 'commit-entry';
+      }
+      else if(t === 'html') {
+        return 'html-entry';
       }
       else if(t === 'journal') {
         return 'journal-entry';
