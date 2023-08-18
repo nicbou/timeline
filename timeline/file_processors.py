@@ -91,7 +91,7 @@ def process_markdown(file: TimelineFile, entries: Iterable[TimelineEntry], metad
             TimelineEntry(
                 file_path=file.file_path,
                 checksum=file.checksum,
-                entry_type=EntryType.MARKDOWN,
+                entry_type=EntryType.HTML,
                 date_start=date_start,
                 date_end=date_end,
                 data={}

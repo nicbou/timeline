@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -8,19 +8,19 @@ class EntryType(Enum):
     IMAGE = 'image'
     VIDEO = 'video'
     TEXT = 'text'
-    MARKDOWN = 'markdown'
+    HTML = 'html'
 
     MESSAGE = 'message'
     EVENT = 'event'
 
     SEARCH = 'search'
     BROWSING_HISTORY = 'browse'
+    WATCHED_CONTENT = 'watch'
 
     COMMIT = 'commit'
 
     BALANCE = 'balance'
-    INCOME = 'income'
-    EXPENSE = 'expense'
+    TRANSACTION = 'transaction'
 
     POST = 'post'
     COMMENT = 'comment'
