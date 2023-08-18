@@ -1,6 +1,5 @@
 from datetime import datetime
 from importlib.resources import path
-from markupsafe import Markup
 from pathlib import Path
 from timeline.file_processors import process_text, process_markdown
 from timeline.filesystem import get_files_in_paths
@@ -52,7 +51,8 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
     logging.info(f"Processed {new_file_count} new files")
 
 
-def generate(input_paths, includerules, ignorerules, metadata_root: Path, output_root: Path):
+def generate(input_paths, includerules, ignorerules, output_root: Path):
+    metadata_root = output_root / 'metadata'
     metadata_root.mkdir(parents=True, exist_ok=True)
     connection = db.get_connection(metadata_root / 'timeline.db')
     cursor = connection.cursor()
@@ -62,9 +62,9 @@ def generate(input_paths, includerules, ignorerules, metadata_root: Path, output
 
     templates_root = path(package=templates, resource="").__enter__()
     new_page_count = 0
-    (output_root / 'api').mkdir(parents=True, exist_ok=True)
+    (output_root / 'entries').mkdir(parents=True, exist_ok=True)
     for day, date_processed in db.dates_with_entries(cursor).items():
-        template_output_path = output_root / 'api' / f"{day.strftime('%Y-%m-%d')}.json"
+        template_output_path = output_root / 'entries' / f"{day.strftime('%Y-%m-%d')}.json"
         if not template_output_path.exists() or date_processed.timestamp() > template_output_path.stat().st_mtime:
             new_page_count += 1
             with template_output_path.open('w') as json_file:
