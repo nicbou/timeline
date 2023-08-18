@@ -20,7 +20,6 @@ setup(
     python_requires='>=3.11',
     install_requires=[
         'Markdown==3.4.3',
-        'Jinja2==3.1.2',
     ],
     zip_safe=False,
 )

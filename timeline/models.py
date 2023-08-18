@@ -37,6 +37,16 @@ class TimelineEntry:
     date_end: datetime
     data: dict
 
+    def to_json_dict(self):
+        return {
+            'file_path': str(self.file_path),
+            'checksum': self.checksum,
+            'entry_type': self.entry_type.value,
+            'date_start': self.date_start.isoformat(),
+            'date_end': self.date_end.isoformat() if self.date_end else None,
+            'data': self.data,
+        }
+
 
 @dataclass(frozen=True)
 class TimelineFile:

@@ -1,14 +1,13 @@
 from datetime import datetime
 from importlib.resources import path
-from jinja2.ext import Extension
-from jinja2 import Environment, FileSystemLoader, select_autoescape, StrictUndefined, nodes
 from markupsafe import Markup
 from pathlib import Path
 from timeline.file_processors import process_text, process_markdown
 from timeline.filesystem import get_files_in_paths
-from timeline.models import TimelineFile, EntryType
+from timeline.models import TimelineFile
 from timeline import templates
 from typing import Iterable
+import json
 import logging
 import timeline.database as db
 
@@ -53,35 +52,6 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
     logging.info(f"Processed {new_file_count} new files")
 
 
-class IncludeRawExtension(Extension):
-    tags = {"include_raw"}
-
-    def parse(self, parser):
-        lineno = parser.stream.expect("name:include_raw").lineno
-        template = parser.parse_expression()
-        result = self.call_method("_render", [template], lineno=lineno)
-        return nodes.Output([result], lineno=lineno)
-
-    def _render(self, filename):
-        return Markup(self.environment.loader.get_source(self.environment, filename)[0])
-
-
-def get_template_environment(templates_root: Path, metadata_root: Path):
-    env = Environment(
-        loader=FileSystemLoader([str(templates_root), str(metadata_root)]),
-        autoescape=select_autoescape(),
-        extensions=[IncludeRawExtension],
-        undefined=StrictUndefined
-    )
-    return env
-
-
-def render_template(template_environment: Environment, template_path: Path, context: dict, output_path: Path):
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    template = template_environment.get_template(str(template_path))
-    template.stream(**context).dump(str(output_path))
-
-
 def generate(input_paths, includerules, ignorerules, metadata_root: Path, output_root: Path):
     metadata_root.mkdir(parents=True, exist_ok=True)
     connection = db.get_connection(metadata_root / 'timeline.db')
@@ -90,21 +60,23 @@ def generate(input_paths, includerules, ignorerules, metadata_root: Path, output
     process_timeline_files(cursor, input_paths, includerules, ignorerules, metadata_root)
     connection.commit()
 
-    template_environment = get_template_environment(path(package=templates, resource="").__enter__(), metadata_root)
+    templates_root = path(package=templates, resource="").__enter__()
     new_page_count = 0
+    (output_root / 'api').mkdir(parents=True, exist_ok=True)
     for day, date_processed in db.dates_with_entries(cursor).items():
-        output_path = output_root / f"{day.strftime('%Y-%m-%d')}.html"
-        if not output_path.exists() or date_processed.timestamp() > output_path.stat().st_mtime:
-            logging.info(f"Generating page for {day.strftime('%Y-%m-%d')}")
+        template_output_path = output_root / 'api' / f"{day.strftime('%Y-%m-%d')}.json"
+        if not template_output_path.exists() or date_processed.timestamp() > template_output_path.stat().st_mtime:
             new_page_count += 1
-            render_template(
-                template_environment,
-                'day.html.jinja',
-                {
-                    'entries': db.get_entries_for_date(cursor, day),
-                    'EntryType': EntryType,
-                },
-                output_path
-            )
+            with template_output_path.open('w') as json_file:
+                json.dump({
+                    'entries': [entry.to_json_dict() for entry in db.get_entries_for_date(cursor, day)],
+                }, json_file)
+
+    # Copy frontend code and assets
+    for file in get_files_in_paths([templates_root, ]):
+        output_file = output_root / file.relative_to(templates_root)
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.unlink(missing_ok=True)
+        output_file.hardlink_to(file)
 
     logging.info(f"Generated {new_page_count} date pages")
