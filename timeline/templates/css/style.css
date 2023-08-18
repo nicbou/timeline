@@ -99,17 +99,8 @@ small{font:var(--font-s)}
 .icon{font-size:var(--font-size-icons);line-height:var(--font-size-icons);width:var(--width-icons);text-align:center;}
 
 /* Form elements */
-input, button, textarea, select, .button, .files-input, .fake-input{font:var(--font-m);border:var(--border-input);padding:var(--spacing-xs) var(--spacing-s);margin:0;background:#fff;}
+input, button, textarea, select, .button{font:var(--font-m);border:var(--border-input);padding:var(--spacing-xs) var(--spacing-s);margin:0;background:#fff;}
     textarea{height:calc(var(--line-height-m) * 3)}
-    .files-input ul{list-style:inside none;margin:0}
-        .files-input li{padding:var(--spacing-s) 0;border-bottom:var(--border-03);display:flex;align-items:center;}
-            .files-input li:last-child{border-bottom:none;}
-            .files-input input{border:none;margin:0;padding:0;}
-            .files-input li i:first-child{margin-right:var(--spacing-s);}
-            .files-input li .file-name{flex: 1}
-            .files-input li .actions{flex:0 0 auto}
-                .files-input li .actions a{padding:var(--spacing-xs);border-radius:var(--border-radius);}
-                .files-input li .actions a:hover{background:var(--color-background-02);}
 .button{border:var(--border-button);border-radius:var(--border-radius);cursor:pointer;padding:var(--spacing-s) var(--spacing-m);background:var(--color-button-background);color:var(--color-button-text);}
     .button:not([disabled]):hover{filter:brightness(1.1)}
     .button:active{border-bottom-width:1px;}
@@ -129,11 +120,6 @@ input, button, textarea, select, .button, .files-input, .fake-input{font:var(--f
     .input-group.vertical > *:last-child{border-radius:0 0 var(--border-radius) var(--border-radius);}
     .input-group.vertical > * + *{border-top:var(--border-input)}
 .input-group > *:only-child, .input-group.vertical > *:only-child{border-radius:var(--border-radius);}
-
-/* Login page */
-#page #login{display:grid;justify-items:center;align-items:center;}
-    #page #login .form{width:calc(100% - var(--spacing-m) * 2);max-width:400px;background:var(--color-background-03);border-radius:var(--border-radius);padding:0 var(--spacing-m);margin:var(--spacing-m);box-sizing:border-box;}
-        #page #login .form h1{margin:var(--spacing-m) 0}
 
 /* Timeline elements */
 .entries{}
@@ -199,18 +185,6 @@ input, button, textarea, select, .button, .files-input, .fake-input{font:var(--f
     .preview .content{padding:0}
         .preview .content img, .preview .content video, .preview .content object{object-fit:contain;width:100%;height:100%;background:#000;display:block;}
         .preview .close{position:absolute;top:var(--spacing-m);right:var(--spacing-m);z-index:1;}
-
-/* Settings */
-.archive-list > li, .source-list > li{list-style:inside none;margin:0;padding:0;display:block;border-bottom:var(--border-02);padding:var(--spacing-s) 0 0;max-width:var(--content-max-width);}
-.archive-list > li:last-child, .source > li:last-child{border-bottom:none}
-.archive-preview, .source-preview{display:flex;align-items:bottom;align-items:center;flex-wrap:wrap;}
-    .archive-preview .icon{margin-right:var(--spacing-s);color:var(--color-text-faded)}
-        .archive-preview.processed .icon{color:var(--color-text)}
-    .archive-preview .input-group, .source-preview .input-group{flex:0}
-    .archive-preview .archive-details, .source-preview .source-details{flex:1 1 350px}
-    .archive h2, .source h2{font:var(--font-h3)}
-
-.form .input-group{margin:var(--spacing-m) 0;}
 
 @media screen and ( max-width:601px ){
     :root{

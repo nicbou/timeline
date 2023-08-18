@@ -1,6 +1,6 @@
 import { RequestStatus } from './../models/requests.js';
 import { filters } from './../models/filters.js';
-import TimelineService from './../services/timeline-service.js';
+import config from './../config.js';
 
 export default {
   namespaced: true,
@@ -49,14 +49,14 @@ export default {
   },
   actions: {
     async getEntries(context, forceRefresh=false) {
-      const timelineDate = moment(this.state.route.query.date, 'YYYY-MM-DD');
       if (context.state.entriesRequestStatus === RequestStatus.NONE || forceRefresh) {
         context.commit('ENTRIES_REQUEST_PENDING');
         const filters = {...this.state.route.query};
         delete filters['date'];
-        const entriesRequestPromise = TimelineService.getEntries(timelineDate)
-          .then(entries => {
-            context.commit('SET_ENTRIES', entries);
+        const entriesRequestPromise = fetch(`${config.domain}/entries/${this.state.route.query.date}.json`)
+          .then(response => response.ok ? response.json() : Promise.reject(response))
+          .then(json => {
+            context.commit('SET_ENTRIES', json.entries);
             context.commit('ENTRIES_REQUEST_SUCCESS');
             return context.state.entries;
           })
