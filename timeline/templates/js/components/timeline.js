@@ -1,13 +1,11 @@
 import EntryFilter from './filter.js'
 import EntryMap from './previews/geolocation.js'
-import JournalEntry from './entries/journal.js'
 import Preview from './preview.js';
 import SpinnerComponent from './spinner.js';
 import TimelineActivityEntry from './entries/activity.js';
 import TimelineCommitEntry from './entries/commit.js';
 import TimelineGalleryEntry from './entries/gallery.js';
 import TimelineHtmlEntry from './entries/html.js';
-import TimelineJournalEntry from './entries/journal.js'
 import TimelineMessageEntry from './entries/message.js';
 import TimelineNav from './timeline-nav.js';
 import TimelinePostEntry from './entries/post.js'
@@ -35,7 +33,6 @@ export default Vue.component('timeline', {
     return {
       selectedEntry: null,
       filters,
-      isJournalModalOpen: false,
     }
   },
   created: function() {
@@ -148,9 +145,6 @@ export default Vue.component('timeline', {
       else if(t === 'html') {
         return 'html-entry';
       }
-      else if(t === 'journal') {
-        return 'journal-entry';
-      }
       else if(t === 'message') {
         return 'message-entry';
       }
@@ -170,7 +164,7 @@ export default Vue.component('timeline', {
     }
   },
   template: `
-    <div id="timeline" :class="{'modal-open': !!selectedEntry || isJournalModalOpen}">
+    <div id="timeline" :class="{'modal-open': !!selectedEntry}">
       <header>
         <timeline-nav id="timeline-nav"></timeline-nav>
       </header>
@@ -191,7 +185,6 @@ export default Vue.component('timeline', {
         </div>
         <div class="content entries">
           <spinner v-if="isLoading"></spinner>
-          <button class="button" @click="isJournalModalOpen=true" v-show="!isLoading"><i class="fas fa-pen"></i> Write something</button>
           <div class="entry-group" v-for="group in groupedEntries" :data-group-title="entryGroupTitle(group)">
             <component
               :entry="entry"

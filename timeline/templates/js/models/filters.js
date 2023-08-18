@@ -37,12 +37,6 @@ export const filters = {
     iconClass: 'fab fa-y-combinator',
     filterFunction: (entry) => entry.entry_type === 'social.hackernews',
   },
-  journal: {
-    displayName: 'journal entry',
-    displayNamePlural: 'journal entries',
-    iconClass: 'fas fa-pen-square',
-    filterFunction: (entry) => entry.entry_type === 'journal',
-  },
   location: {
     displayName: 'location ping',
     displayNamePlural: 'location pings',
