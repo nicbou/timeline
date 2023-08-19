@@ -3,7 +3,7 @@ import store from './store/store.js';
 
 
 const router = new VueRouter({
-  mode: 'history',
+  mode: 'hash',
   routes: [
     {
       path: '/timeline',
