@@ -21,7 +21,7 @@ def str_to_datetime(date_string: str):
 
 
 def dates_from_filename(file_path: Path):
-    file_name = file_path.stem
+    file_name, _, _ = file_path.name.partition('.')
 
     if match := file_dates_regex.search(file_name):
         try:
@@ -45,6 +45,9 @@ def dates_from_filename(file_path: Path):
 
 def dates_from_file(file_path: Path):
     date_start, date_end = dates_from_filename(file_path)
+
+    print(date_start, date_end, file_path.stem)
+
     if date_start is None and date_end is None:
         date_start = datetime.fromtimestamp(file_path.stat().st_mtime)
     return date_start, date_end

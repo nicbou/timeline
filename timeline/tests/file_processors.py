@@ -15,10 +15,12 @@ no_date = (None, None)
 
 @pytest.mark.parametrize("input,expected", [
     # DATE ONLY
-
     ('test/test-2023-09-10.md', september_10),
     ('test/2023-09-10.md', september_10),
     ('test/2023.md', no_date),
+    ('test/test-2023-09-10.journal.md', september_10),
+    ('test/2023-09-10.journal.md', september_10),
+    ('test/2023.journal.md', no_date),
 
     # Date range
     ('test/test 2023-09-10 to 2023-10-12.md', september_10_to_october_12),
@@ -42,6 +44,8 @@ no_date = (None, None)
 
     ('test/test-2023-09-10T2330.md', september_10_1130PM),
     ('test/2023-09-10T2330.md', september_10_1130PM),
+    ('test/test-2023-09-10T2330.journal.md', september_10_1130PM),
+    ('test/2023-09-10T2330.journal.md', september_10_1130PM),
 
     # Date range
     ('test/test 2023-09-10T2330 to 2023-10-12T0504.md', september_10_1130PM_to_october_12_504AM),
