@@ -1,5 +1,4 @@
 import config from './../../config.js';
-import TimelineEntryIcon from './entry-icon.js';
 
 export default Vue.component('text-entry', {
   props: ['entry'],
@@ -22,8 +21,8 @@ export default Vue.component('text-entry', {
     this.text = await req.text();
   },
   template: `
-    <div>
-      <entry-icon icon-class="fas fa-file-alt" :entry="entry"></entry-icon>
+    <div class="entry text">
+      <i class="icon fas fa-file-alt" :entry="entry"></i>
       <div class="meta">{{ fileName }}</div>
       <div class="content">
         <p v-for="paragraph in paragraphs">{{ paragraph }}</p>
