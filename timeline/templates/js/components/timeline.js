@@ -59,6 +59,11 @@ export default Vue.component('timeline', {
     },
   },
   methods: {
+    componentType(entryType) {
+      return {
+        diary: 'html-entry',
+      }[entryType] || entryType + '-entry';
+    }
   },
   template: `
     <div id="layout">
@@ -74,7 +79,7 @@ export default Vue.component('timeline', {
         <div class="entries">
           <component
             :entry="entry"
-            :is="entry.entry_type + '-entry'"
+            :is="componentType(entry.entry_type)"
             class="entry"
             v-for="entry in entries"
             v-if="!isLoading"></component>
