@@ -24,7 +24,7 @@ export default Vue.component('html-entry', {
     <article class="entry html">
       <details>
         <summary>
-          <datetime>{{ dateStart.toLocaleTimeString('en-GB', {hour: 'numeric', minute:'2-digit'}) }}</datetime>
+          <time>{{ dateStart.toLocaleTimeString('en-GB', {hour: 'numeric', minute:'2-digit'}) }}</time>
           <h2>{{ fileName }}</h2>
         </summary>
         <div class="content" v-html="html"></div>

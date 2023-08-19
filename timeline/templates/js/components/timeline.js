@@ -2,7 +2,6 @@ import SpinnerComponent from './spinner.js';
 import TimelineHtmlEntry from './entries/html.js';
 import TimelineNav from './timeline-nav.js';
 import TimelineTextEntry from './entries/text.js';
-import { filters } from './../models/filters.js';
 import { RequestStatus } from './../models/requests.js';
 
 function makeRouteValid(to, from, next) {
@@ -23,7 +22,6 @@ export default Vue.component('timeline', {
   data: function() {
     return {
       selectedEntry: null,
-      filters,
     }
   },
   created: function() {
@@ -69,7 +67,7 @@ export default Vue.component('timeline', {
       </header>
       <main>
         <h1 class="current-date">
-          <date>{{ timelineDate.format('LL') }}</date>
+          <time>{{ timelineDate.format('LL') }}</time>
           <small>{{ timelineDate.format('dddd') }}, {{ relativeTimelineDate }}</small>
         </h1>
         <spinner v-if="isLoading"></spinner>
