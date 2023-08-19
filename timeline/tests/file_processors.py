@@ -5,11 +5,17 @@ from timeline.models import TimelineFile, EntryType
 import pytest
 
 september_10 = (datetime(2023, 9, 10, 0, 0, 0), None)
+september_10_1130PM = (datetime(2023, 9, 10, 23, 30, 0), None)
+september_10_1130PM_to_october_12 = (datetime(2023, 9, 10, 23, 30, 0), datetime(2023, 10, 12, 23, 59, 59))
+september_10_1130PM_to_october_12_504AM = (datetime(2023, 9, 10, 23, 30, 0), datetime(2023, 10, 12, 5, 3, 59))
 september_10_to_october_12 = (datetime(2023, 9, 10, 0, 0, 0), datetime(2023, 10, 12, 23, 59, 59))
+september_10_to_october_12_504AM = (datetime(2023, 9, 10, 0, 0, 0), datetime(2023, 10, 12, 5, 3, 59))
 no_date = (None, None)
 
 
 @pytest.mark.parametrize("input,expected", [
+    # DATE ONLY
+
     ('test/test-2023-09-10.md', september_10),
     ('test/2023-09-10.md', september_10),
     ('test/2023.md', no_date),
@@ -31,6 +37,28 @@ no_date = (None, None)
     ('test/test-2023-09-1.md', no_date),
     ('test/test-2023-9-10.md', no_date),
     ('test/test-2023-9.md', no_date),
+
+    # DATE WITH TIME
+
+    ('test/test-2023-09-10T2330.md', september_10_1130PM),
+    ('test/2023-09-10T2330.md', september_10_1130PM),
+
+    # Date range
+    ('test/test 2023-09-10T2330 to 2023-10-12T0504.md', september_10_1130PM_to_october_12_504AM),
+    ('test/2023-09-10 to 2023-10-12T0504.md', september_10_to_october_12_504AM),
+    ('test/2023-09-10T2330 to 2023-10-12.md', september_10_1130PM_to_october_12),
+
+    # Date not at the end
+    ('test/2023-09-10T2330 to 2023-09-11T2330 test.md', no_date),
+    ('test/2023-09-10T2330 test.md', no_date),
+
+    # Date not valid
+    ('test/2023-09-10T2430.md', no_date),
+    ('test/2023-09-10T2360.md', no_date),
+    ('test/2023-09-10T3222.md', no_date),
+    ('test/2023-09-10T222.md', no_date),
+    ('test/2023-09T2330.md', no_date),
+    ('test/2023T2330.md', no_date),
 ])
 def test_dates_from_filename(input, expected):
     assert dates_from_filename(Path(input)) == expected, f"Unexpected result for {input}"
@@ -61,11 +89,13 @@ def test_process_text(tmp_path):
         checksum='not important',
         size=111,
     )
-    entries = process_text(timeline_file, [])
+    entries = process_text(timeline_file, [], tmp_path)
     assert entries[0].file_path == file_path
     assert entries[0].entry_type == EntryType.TEXT
     assert entries[0].date_start == datetime.fromtimestamp(file_path.stat().st_mtime)
     assert entries[0].date_end is None
-    assert entries[0].data == {
-        'content': 'Hello world',
-    }
+    assert entries[0].data == {}
+    output_path = tmp_path / entries[0].checksum / 'content.txt'
+    assert output_path.exists()
+    with output_path.open() as output_file:
+        assert output_file.read() == 'Hello world'
