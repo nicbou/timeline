@@ -59,28 +59,24 @@ export default Vue.component('timeline', {
     isLoading: function() {
       return this.$store.state.timeline.entriesRequestStatus === RequestStatus.PENDING;
     },
-    transactionsEntries: function() {
-      return this.entries.filter(this.filters.transaction.filterFunction);
-    },
   },
   methods: {
   },
   template: `
-    <div id="timeline">
+    <div id="layout">
       <header>
         <timeline-nav id="timeline-nav"></timeline-nav>
       </header>
-      <main class="content-with-sidebar">
-        <div class="sidebar">
-          <h1 class="current-date">{{ timelineDate.format('LL') }}</h1>
-          <span class="subtitle">{{ timelineDate.format('dddd') }}, {{ relativeTimelineDate }}</span>
-        </div>
-        <div class="content entries">
-          <spinner v-if="isLoading"></spinner>
+      <main>
+        <h1 class="current-date">
+          <date>{{ timelineDate.format('LL') }}</date>
+          <small>{{ timelineDate.format('dddd') }}, {{ relativeTimelineDate }}</small>
+        </h1>
+        <spinner v-if="isLoading"></spinner>
+        <div class="entries">
           <component
             :entry="entry"
             :is="entry.entry_type + '-entry'"
-            :key="entry.id"
             class="entry"
             v-for="entry in entries"
             v-if="!isLoading"></component>

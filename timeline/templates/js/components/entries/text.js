@@ -21,12 +21,12 @@ export default Vue.component('text-entry', {
     this.text = await req.text();
   },
   template: `
-    <div class="entry text">
+    <article class="entry text">
       <i class="icon fas fa-file-alt" :entry="entry"></i>
       <div class="meta">{{ fileName }}</div>
       <div class="content">
         <p v-for="paragraph in paragraphs">{{ paragraph }}</p>
       </div>
-    </div>
+    </article>
   `
 });
