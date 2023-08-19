@@ -96,8 +96,8 @@ def process_markdown(file: TimelineFile, entries: Iterable[TimelineEntry], metad
             )
 
         date_start, date_end = dates_from_file(file.file_path)
-        if file.file_path.name.lower().endswith('.journal.md'):
-            entry_type = EntryType.JOURNAL
+        if file.file_path.name.lower().endswith('.diary.md'):
+            entry_type = EntryType.DIARY
         else:
             entry_type = EntryType.HTML
         entries.append(

@@ -12,7 +12,7 @@ class EntryType(Enum):
 
     MESSAGE = 'message'
     EVENT = 'event'
-    JOURNAL = 'journal'
+    DIARY = 'diary'
 
     SEARCH = 'search'
     BROWSING_HISTORY = 'browse'
