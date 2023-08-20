@@ -1,7 +1,8 @@
 from datetime import datetime
 from importlib.resources import path
 from pathlib import Path
-from timeline.file_processors import process_text, process_markdown
+from timeline.file_processors.image import process_image
+from timeline.file_processors.text import process_text, process_markdown
 from timeline.filesystem import get_files_in_paths
 from timeline.models import TimelineFile
 from timeline import templates
@@ -9,6 +10,9 @@ from typing import Iterable
 import json
 import logging
 import timeline.database as db
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_timeline_files_in_paths(paths, includerules, ignorerules) -> Iterable[TimelineFile]:
@@ -25,6 +29,7 @@ def get_timeline_files_in_paths(paths, includerules, ignorerules) -> Iterable[Ti
 
 
 def process_timeline_files(cursor, input_paths, includerules, ignorerules, metadata_root: Path) -> int:
+    logger.info("Updating file list")
     db.create_database(cursor)
     db.update_file_database(
         cursor, get_timeline_files_in_paths(input_paths, includerules, ignorerules)
@@ -33,12 +38,13 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
     timeline_file_processors = [
         process_text,
         process_markdown,
+        process_image,
     ]
 
     new_file_count = 0
     for file in db.get_unprocessed_timeline_files(cursor):
         new_file_count += 1
-        logging.info(f"Processing {file.file_path}")
+        logger.info(f"Processing {file.file_path}")
 
         entries = []
         for process_function in timeline_file_processors:
@@ -48,7 +54,7 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
         db.add_timeline_entries(cursor, entries)
         db.mark_timeline_file_as_processed(cursor, file.file_path)
 
-    logging.info(f"Processed {new_file_count} new files")
+    logger.info(f"Processed {new_file_count} new files")
 
 
 def generate(input_paths, includerules, ignorerules, output_root: Path):
@@ -79,4 +85,4 @@ def generate(input_paths, includerules, ignorerules, output_root: Path):
         output_file.unlink(missing_ok=True)
         output_file.hardlink_to(file)
 
-    logging.info(f"Generated {new_page_count} date pages")
+    logger.info(f"Generated {new_page_count} date pages")

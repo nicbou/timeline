@@ -1,6 +1,7 @@
 import SpinnerComponent from './spinner.js';
-import TimelineHtmlEntry from './entries/html.js';
 import TimelineNav from './timeline-nav.js';
+import TimelineHtmlEntry from './entries/html.js';
+import TimelineImageEntry from './entries/image.js';
 import TimelineTextEntry from './entries/text.js';
 import { RequestStatus } from './../models/requests.js';
 
@@ -80,7 +81,6 @@ export default Vue.component('timeline', {
           <component
             :entry="entry"
             :is="componentType(entry.entry_type)"
-            class="entry"
             v-for="entry in entries"
             v-if="!isLoading"></component>
         </div>

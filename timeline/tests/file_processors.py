@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-from timeline.file_processors import dates_from_filename, dates_from_file, process_text
+from timeline.file_processors import dates_from_filename, dates_from_file
 from timeline.models import TimelineFile, EntryType
 import pytest
 

@@ -60,6 +60,13 @@ h4{
     flex: 0 0 100%;
 }
 
+.entry.image{
+    flex: 0 0 auto;
+}
+.entry.image img{
+    max-width: 400px;
+}
+
 .entry > details{
     border:1px solid #000;
     border-radius: var(--b-radius);
