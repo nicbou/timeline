@@ -1,7 +1,7 @@
 from timeline.database import create_timeline_files_table, add_found_files, clear_table, get_connection, \
     apply_cached_checksums_to_found_files, commit_found_files, fill_missing_found_file_checksums, \
     create_timeline_entries_table, add_timeline_entries, create_found_files_table, dates_with_entries, \
-    get_entries_for_date
+    get_entries_for_date, db_date
 from timeline.filesystem import get_checksum
 from timeline.models import TimelineEntry, TimelineFile, EntryType
 from datetime import date, datetime, timedelta
@@ -46,8 +46,8 @@ def fake_timeline_entries(tmp_path):
             file_path=tmp_path / 'file_a.text',
             checksum='improperly mocked value',
             entry_type=EntryType.IMAGE,
-            date_start=datetime(2023, 7, 1),
-            date_end=datetime(2023, 7, 4),
+            date_start=datetime(2023, 7, 1).astimezone(),
+            date_end=datetime(2023, 7, 4).astimezone(),
             data={
                 'size': [640, 480],
                 'location': [52.44, 49.44],
@@ -58,7 +58,7 @@ def fake_timeline_entries(tmp_path):
             file_path=tmp_path / 'file_b.text',
             checksum='improperly mocked value',
             entry_type=EntryType.HTML,
-            date_start=datetime(2023, 7, 3),
+            date_start=datetime(2023, 7, 3).astimezone(),
             date_end=None,
             data={
                 'content': '# This is my journal\n\nIt was a dark and stormy night...'
@@ -68,8 +68,8 @@ def fake_timeline_entries(tmp_path):
             file_path=tmp_path / 'file_b.text',
             checksum='improperly mocked value',
             entry_type=EntryType.HTML,
-            date_start=datetime(2023, 7, 7),
-            date_end=datetime(2023, 7, 10, 23, 59, 59),
+            date_start=datetime(2023, 7, 7).astimezone(),
+            date_end=datetime(2023, 7, 10, 23, 59, 59).astimezone(),
             data={
                 'content': 'All quiet on the western front'
             },
@@ -112,9 +112,9 @@ def test_add_found_files(cursor, tmp_path):
         assert row == (
             str(found_files[index].file_path),
             found_files[index].checksum,
-            found_files[index].date_added.replace(tzinfo=None),
+            db_date(found_files[index].date_added),
             found_files[index].size,
-            found_files[index].file_mtime.replace(tzinfo=None),
+            db_date(found_files[index].file_mtime),
         )
 
 
@@ -195,7 +195,7 @@ def test_commit_found_files(cursor, tmp_path):
         (
             str(file.file_path),
             file.size,
-            file.file_mtime.replace(tzinfo=None),
+            db_date(file.file_mtime),
             file.checksum,
             None
         ) for file in found_files
@@ -214,7 +214,7 @@ def test_commit_found_files_handle_removed(cursor, tmp_path):
         (
             str(file.file_path),
             file.size,
-            file.file_mtime.replace(tzinfo=None),
+            db_date(file.file_mtime),
             file.checksum,
             None
         ) for file in found_files
@@ -231,7 +231,7 @@ def test_commit_found_files_handle_removed(cursor, tmp_path):
         (
             str(file.file_path),
             file.size,
-            file.file_mtime.replace(tzinfo=None),
+            db_date(file.file_mtime),
             file.checksum,
             None
         ) for file in found_files
@@ -260,7 +260,7 @@ def test_commit_found_files_handle_existing_checksum(cursor, tmp_path):
         (
             str(file.file_path),
             file.size,
-            file.file_mtime.replace(tzinfo=None),
+            db_date(file.file_mtime),
             file.checksum,
             None
         ) for file in new_found_files
@@ -274,8 +274,8 @@ def test_commit_found_files_handle_existing_checksum(cursor, tmp_path):
         (
             str(entry.file_path),
             entry.entry_type.value,
-            entry.date_start.replace(tzinfo=None),
-            entry.date_end.replace(tzinfo=None) if entry.date_end else None,
+            db_date(entry.date_start),
+            db_date(entry.date_end),
             json.dumps(entry.data),
         ) for entry in timeline_entries
     ])
@@ -322,7 +322,7 @@ def test_commit_found_files_handle_new_checksum(cursor, tmp_path):
         (
             str(file.file_path),
             file.size,
-            file.file_mtime.replace(tzinfo=None),
+            db_date(file.file_mtime),
             file.checksum,
             None
         ) for file in new_found_files
@@ -383,8 +383,8 @@ def test_add_timeline_entries(cursor, tmp_path):
         assert row == (
             str(timeline_entries[index].file_path),
             timeline_entries[index].entry_type.value,
-            timeline_entries[index].date_start.replace(tzinfo=None),
-            timeline_entries[index].date_end.replace(tzinfo=None) if timeline_entries[index].date_end else None,
+            db_date(timeline_entries[index].date_start),
+            db_date(timeline_entries[index].date_end),
             json.dumps(timeline_entries[index].data),
         )
 
@@ -405,8 +405,8 @@ def test_dates_with_entries(cursor, tmp_path):
     commit_found_files(cursor)
     add_timeline_entries(cursor, timeline_entries)
 
-    file_a_date = datetime(2023, 9, 10, 11, 0, 0)
-    file_b_date = datetime(2022, 6, 12, 9, 10, 0)
+    file_a_date = datetime(2023, 9, 10, 11, 0, 0).astimezone()
+    file_b_date = datetime(2022, 6, 12, 9, 10, 0).astimezone()
     cursor.executemany(
         '''
         UPDATE timeline_files
@@ -415,11 +415,11 @@ def test_dates_with_entries(cursor, tmp_path):
         ''',
         [
             [
-                file_a_date,
+                db_date(file_a_date),
                 str(tmp_path / 'file_a.text'),
             ],
             [
-                file_b_date,
+                db_date(file_b_date),
                 str(tmp_path / 'file_b.text'),
             ]
         ]
@@ -445,13 +445,21 @@ def test_get_entries_for_date(cursor, tmp_path):
     add_timeline_entries(cursor, timeline_entries)
 
     assert list(get_entries_for_date(cursor, date(2023, 6, 30))) == []
-    assert list(get_entries_for_date(cursor, date(2023, 7, 1))) == [
-        timeline_entries[0],
-    ]
-    assert list(get_entries_for_date(cursor, date(2023, 7, 9))) == [
-        timeline_entries[2],
-    ]
-    assert list(get_entries_for_date(cursor, date(2023, 7, 10))) == [
-        timeline_entries[2],
-    ]
+
+    entries_2023_07_01 = list(get_entries_for_date(cursor, date(2023, 7, 1)))
+    assert len(entries_2023_07_01) == 1
+    assert entries_2023_07_01[0].date_start == timeline_entries[0].date_start
+    assert entries_2023_07_01[0].date_end == timeline_entries[0].date_end
+
+    # Same entry spread over two days
+    entries_2023_07_09 = list(get_entries_for_date(cursor, date(2023, 7, 9)))
+    assert len(entries_2023_07_09) == 1
+    assert entries_2023_07_09[0].date_start == timeline_entries[2].date_start
+    assert entries_2023_07_09[0].date_end == timeline_entries[2].date_end
+
+    entries_2023_07_10 = list(get_entries_for_date(cursor, date(2023, 7, 10)))
+    assert len(entries_2023_07_10) == 1
+    assert entries_2023_07_10[0].date_start == timeline_entries[2].date_start
+    assert entries_2023_07_10[0].date_end == timeline_entries[2].date_end
+
     assert list(get_entries_for_date(cursor, date(2023, 7, 11))) == []

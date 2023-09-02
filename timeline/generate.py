@@ -23,7 +23,7 @@ def get_timeline_files_in_paths(paths, includerules, ignorerules) -> Iterable[Ti
             file_path=file_path,
             checksum=None,
             date_added=now,
-            file_mtime=datetime.fromtimestamp(file_stats.st_mtime),
+            file_mtime=datetime.fromtimestamp(file_stats.st_mtime).astimezone(),
             size=file_stats.st_size,
         )
 

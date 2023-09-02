@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from timeline.filesystem import get_checksum
 from timeline.models import TimelineFile, TimelineEntry, EntryType
@@ -14,6 +14,16 @@ def get_connection(db_path: Path):
     )
     connection.execute('PRAGMA foreign_keys = ON')
     return connection
+
+
+def db_date(date: datetime) -> datetime:
+    # Converts a timezone-aware datetime to UTC and removes timezone information
+    # Sqlite does not support timezones properly
+    return date.astimezone(timezone.utc).replace(tzinfo=None) if date else None
+
+
+def date_from_db(date: datetime) -> datetime:
+    return date.replace(tzinfo=timezone.utc).astimezone() if date else None  # Local timezone
 
 
 def clear_table(cursor, table_name):
@@ -79,8 +89,8 @@ def add_found_files(cursor, files: Iterable[TimelineFile]):
             (
                 str(file.file_path),
                 file.checksum,
-                file.date_added,
-                file.file_mtime,
+                db_date(file.date_added),
+                db_date(file.file_mtime),
                 file.size,
             )
             for file in files
@@ -194,8 +204,8 @@ def get_unprocessed_timeline_files(cursor):
         yield TimelineFile(
             file_path=Path(row[0]),
             checksum=row[1],
-            date_added=row[2],
-            file_mtime=row[3],
+            date_added=date_from_db(row[2]),
+            file_mtime=date_from_db(row[3]),
             size=row[4]
         )
 
@@ -216,8 +226,8 @@ def add_timeline_entries(cursor, entries: Iterable[TimelineEntry]):
             (
                 str(entry.file_path),
                 entry.entry_type.value,
-                entry.date_start,
-                entry.date_end,
+                db_date(entry.date_start),
+                db_date(entry.date_end),
                 json.dumps(entry.data)
             )
             for entry in entries
@@ -233,9 +243,9 @@ def dates_with_entries(cursor):
     ''')
     dates_with_entries = {}
     for row in cursor.fetchall():
-        date_start = row[0].date()
-        date_end = (row[1] or row[0]).date()
-        date_processed = row[2]
+        date_start = date_from_db(row[0]).date()
+        date_end = date_from_db(row[1] or row[0]).date()
+        date_processed = date_from_db(row[2])
 
         days_count = (date_end - date_start).days + 1
         date_range = [
@@ -250,6 +260,7 @@ def dates_with_entries(cursor):
 
 
 def get_entries_for_date(cursor, timeline_date: date):
+    tz_aware_timeline_date = datetime(timeline_date.year, timeline_date.month, timeline_date.day).astimezone()
     cursor.execute(
         '''
             SELECT
@@ -267,8 +278,8 @@ def get_entries_for_date(cursor, timeline_date: date):
                 OR (date_start<:start AND date_end>=:start)
         ''',
         {
-            'start': timeline_date,
-            'end': timeline_date + timedelta(days=1)
+            'start': db_date(tz_aware_timeline_date),
+            'end': db_date(tz_aware_timeline_date + timedelta(days=1)),
         },
     )
     for row in cursor.fetchall():
@@ -276,8 +287,8 @@ def get_entries_for_date(cursor, timeline_date: date):
             file_path=Path(row[0]),
             checksum=row[1],
             entry_type=EntryType(row[2]),
-            date_start=row[3],
-            date_end=row[4],
+            date_start=date_from_db(row[3]),
+            date_end=date_from_db(row[4]),
             data=json.loads(row[5]),
         )
 
@@ -292,5 +303,8 @@ def delete_timeline_entries(cursor, file_path: Path):
 def mark_timeline_file_as_processed(cursor, file_path: Path):
     cursor.execute(
         "UPDATE timeline_files SET date_processed=? WHERE file_path=?",
-        [datetime.now(), str(file_path), ]
+        [
+            db_date(datetime.now()),
+            str(file_path),
+        ]
     )

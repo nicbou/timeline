@@ -39,10 +39,11 @@ def get_image_exif(pil_image) -> dict:
 def parse_exif_date(date_str: str) -> datetime:
     # Official format: YYYY:MM:DD HH:MM:SS
     # Also seen: YYYY-MM-DD HH:MM:SS and YYYY-MM-DDTHH:MM:SS+ZZZZ
+    # Assumes that the dates are in the current timezone
     return datetime.strptime(
         date_str.replace('\x00', '').replace('-', ':').replace('T', ' ')[:19],
         '%Y:%m:%d %H:%M:%S'
-    )
+    ).astimezone()
 
 
 def parse_exif_coordinate(dms, ref):
@@ -137,7 +138,7 @@ def get_image_metadata(image_path: Path) -> dict:
 
 def make_thumbnail(image_path: Path, output_path: Path, max_width: int, max_height: int):
     with Image.open(image_path) as image:
-        image.thumbnail((max_width, max_height), Image.ANTIALIAS)
+        image.thumbnail((max_width, max_height), Image.LANCZOS)
         save_args = {'optimize': True, 'exact': True}
         output_path.parent.mkdir(parents=True, exist_ok=True)
         image.save(output_path, **save_args)

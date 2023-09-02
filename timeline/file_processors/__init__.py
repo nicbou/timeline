@@ -11,9 +11,9 @@ file_dates_regex = re.compile(date_range_regex + '$')
 
 def str_to_datetime(date_string: str):
     try:
-        return datetime.strptime(date_string, '%Y-%m-%dT%H%M')
+        return datetime.strptime(date_string, '%Y-%m-%dT%H%M').astimezone()
     except ValueError:
-        return datetime.strptime(date_string, '%Y-%m-%d')
+        return datetime.strptime(date_string, '%Y-%m-%d').astimezone()
 
 
 def dates_from_filename(file_path: Path):
@@ -43,5 +43,5 @@ def dates_from_file(file_path: Path):
     date_start, date_end = dates_from_filename(file_path)
 
     if date_start is None and date_end is None:
-        date_start = datetime.fromtimestamp(file_path.stat().st_mtime)
+        date_start = datetime.fromtimestamp(file_path.stat().st_mtime).astimezone()
     return date_start, date_end

@@ -1,15 +1,34 @@
 from datetime import datetime
 from pathlib import Path
 from timeline.file_processors import dates_from_filename, dates_from_file
+from timeline.file_processors.text import process_text
 from timeline.models import TimelineFile, EntryType
 import pytest
 
-september_10 = (datetime(2023, 9, 10, 0, 0, 0), None)
-september_10_1130PM = (datetime(2023, 9, 10, 23, 30, 0), None)
-september_10_1130PM_to_october_12 = (datetime(2023, 9, 10, 23, 30, 0), datetime(2023, 10, 12, 23, 59, 59))
-september_10_1130PM_to_october_12_504AM = (datetime(2023, 9, 10, 23, 30, 0), datetime(2023, 10, 12, 5, 3, 59))
-september_10_to_october_12 = (datetime(2023, 9, 10, 0, 0, 0), datetime(2023, 10, 12, 23, 59, 59))
-september_10_to_october_12_504AM = (datetime(2023, 9, 10, 0, 0, 0), datetime(2023, 10, 12, 5, 3, 59))
+september_10 = (
+    datetime(2023, 9, 10, 0, 0, 0).astimezone(),
+    None
+)
+september_10_1130PM = (
+    datetime(2023, 9, 10, 23, 30, 0).astimezone(),
+    None
+)
+september_10_1130PM_to_october_12 = (
+    datetime(2023, 9, 10, 23, 30, 0).astimezone(),
+    datetime(2023, 10, 12, 23, 59, 59).astimezone()
+)
+september_10_1130PM_to_october_12_504AM = (
+    datetime(2023, 9, 10, 23, 30, 0).astimezone(),
+    datetime(2023, 10, 12, 5, 3, 59).astimezone()
+)
+september_10_to_october_12 = (
+    datetime(2023, 9, 10, 0, 0, 0).astimezone(),
+    datetime(2023, 10, 12, 23, 59, 59).astimezone()
+)
+september_10_to_october_12_504AM = (
+    datetime(2023, 9, 10, 0, 0, 0).astimezone(),
+    datetime(2023, 10, 12, 5, 3, 59).astimezone()
+)
 no_date = (None, None)
 
 
@@ -71,14 +90,14 @@ def test_dates_from_filename(input, expected):
 def test_dates_from_file_mtime(tmp_path):
     file_path = tmp_path / 'test.txt'
     file_path.touch()
-    file_mtime = datetime.fromtimestamp(file_path.stat().st_mtime)
+    file_mtime = datetime.fromtimestamp(file_path.stat().st_mtime).astimezone()
     assert dates_from_file(file_path) == (file_mtime, None)
 
 
 def test_dates_from_file_filename_override(tmp_path):
     file_path = tmp_path / 'test 2023-01-10.txt'
     file_path.touch()
-    assert dates_from_file(file_path) == (datetime(2023, 1, 10), None)
+    assert dates_from_file(file_path) == (datetime(2023, 1, 10).astimezone(), None)
 
 
 def test_process_text(tmp_path):
@@ -88,15 +107,15 @@ def test_process_text(tmp_path):
 
     timeline_file = TimelineFile(
         file_path=file_path,
-        date_added=datetime.now(),
-        file_mtime=datetime.now(),
+        date_added=datetime.now().astimezone(),
+        file_mtime=datetime.now().astimezone(),
         checksum='not important',
         size=111,
     )
     entries = process_text(timeline_file, [], tmp_path)
     assert entries[0].file_path == file_path
     assert entries[0].entry_type == EntryType.TEXT
-    assert entries[0].date_start == datetime.fromtimestamp(file_path.stat().st_mtime)
+    assert entries[0].date_start == datetime.fromtimestamp(file_path.stat().st_mtime).astimezone()
     assert entries[0].date_end is None
     assert entries[0].data == {}
     output_path = tmp_path / entries[0].checksum / 'content.txt'
