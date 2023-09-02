@@ -1,3 +1,4 @@
+import GeolocationMapComponent from './geolocation-map.js';
 import SpinnerComponent from './spinner.js';
 import TimelineNav from './timeline-nav.js';
 import TimelineHtmlEntry from './entries/html.js';
@@ -77,6 +78,7 @@ export default Vue.component('timeline', {
           <small>{{ timelineDate.format('dddd') }}, {{ relativeTimelineDate }}</small>
         </h1>
         <spinner v-if="isLoading"></spinner>
+        <entry-map :entries="entries"></entry-map>
         <div class="entries">
           <component
             :entry="entry"

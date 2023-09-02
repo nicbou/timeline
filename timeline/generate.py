@@ -59,7 +59,7 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
     logger.info(f"Processed {new_file_count} new files")
 
 
-def generate(input_paths, includerules, ignorerules, output_root: Path):
+def generate(input_paths, includerules, ignorerules, output_root: Path, site_url: str = '', google_maps_api_key: str = ''):
     metadata_root = output_root / 'metadata'
     metadata_root.mkdir(parents=True, exist_ok=True)
     connection = db.get_connection(metadata_root / 'timeline.db')
@@ -88,5 +88,17 @@ def generate(input_paths, includerules, ignorerules, output_root: Path):
         output_file.parent.mkdir(parents=True, exist_ok=True)
         output_file.unlink(missing_ok=True)
         output_file.hardlink_to(file)
+
+    # Generate .js config file
+    js_config_path = output_root / 'js/config.js'
+    with js_config_path.open() as config_file:
+        config = (
+            config_file.read()
+            .replace("${GOOGLE_MAPS_API_KEY}", google_maps_api_key)
+            .replace("${SITE_URL}", site_url)
+        )
+    js_config_path.unlink()  # This is a hard link to the original. Remove it and create a copy of it.
+    with js_config_path.open('w') as config_file:
+        config_file.write(config)
 
     logger.info(f"Generated {new_page_count} date pages")

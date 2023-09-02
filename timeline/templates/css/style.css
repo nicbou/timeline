@@ -86,3 +86,8 @@ h4{
 .entry > details > .content{
     padding: var(--l);
 }
+
+.entry-map.google-map{
+    width: 400px;
+    height: 400px;
+}
