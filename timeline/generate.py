@@ -3,6 +3,7 @@ from importlib.resources import path
 from pathlib import Path
 from timeline.file_processors.image import process_image
 from timeline.file_processors.text import process_text, process_markdown
+from timeline.file_processors.gpx import process_gpx
 from timeline.filesystem import get_files_in_paths
 from timeline.models import TimelineFile
 from timeline import templates
@@ -39,6 +40,7 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
         process_text,
         process_markdown,
         process_image,
+        process_gpx,
     ]
 
     new_file_count = 0
@@ -68,12 +70,14 @@ def generate(input_paths, includerules, ignorerules, output_root: Path):
 
     templates_root = path(package=templates, resource="").__enter__()
     new_page_count = 0
+
+    # Generate entries .json for each day
     (output_root / 'entries').mkdir(parents=True, exist_ok=True)
     for day, date_processed in db.dates_with_entries(cursor).items():
-        template_output_path = output_root / 'entries' / f"{day.strftime('%Y-%m-%d')}.json"
-        if not template_output_path.exists() or date_processed.timestamp() > template_output_path.stat().st_mtime:
+        day_json_path = output_root / 'entries' / f"{day.strftime('%Y-%m-%d')}.json"
+        if not day_json_path.exists() or date_processed.timestamp() > day_json_path.stat().st_mtime:
             new_page_count += 1
-            with template_output_path.open('w') as json_file:
+            with day_json_path.open('w') as json_file:
                 json.dump({
                     'entries': [entry.to_json_dict() for entry in db.get_entries_for_date(cursor, day)],
                 }, json_file)

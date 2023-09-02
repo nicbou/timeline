@@ -21,6 +21,7 @@ setup(
     install_requires=[
         'Markdown==3.4.3',
         'Pillow==10.0.0',
+        'gpxpy==1.5.0',
     ],
     zip_safe=False,
 )
