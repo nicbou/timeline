@@ -8,10 +8,18 @@ export default Vue.component('image-entry', {
       const extension = pathParts[pathParts.length - 1];
       return `${config.domain}/metadata/${this.entry.checksum}/thumbnail.webp`;
     },
+    caption() {
+      if(this.entry.data.location && this.entry.data.location.city){
+        return [this.entry.data.location.city, this.entry.data.location.country].join(', ');
+      }
+    }
   },
   template: `
     <article class="entry image">
-      <img :src="imgSrc">
+      <figure>
+        <img :src="imgSrc">
+        <figcaption v-if="caption">{{ caption }}</figcaption>
+      </figure>
     </article>
   `
 });

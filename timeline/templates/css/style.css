@@ -75,7 +75,24 @@ h4{
 .entry.image{
     background: #ccc;
 }
+.entry.image figure{
+    position: relative;
+}
+.entry.image figcaption{
+    display: none;
+}
+.entry.image:hover figcaption{
+    display: block;
+    position: absolute;
+    box-sizing: border-box;
+    bottom: 0;
+    width: 100%;
+    padding:var(--s);
+    color: #fff;
+    backdrop-filter: blur(10px) brightness(0.7);
+}
 .entry.image img{
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;

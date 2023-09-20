@@ -1,5 +1,5 @@
-import GeolocationMapComponent from './geolocation-map.js';
 import SpinnerComponent from './spinner.js';
+import TimelineMap from './entry-map.js';
 import TimelineNav from './timeline-nav.js';
 import TimelineHtmlEntry from './entries/html.js';
 import TimelineImageEntry from './entries/image.js';

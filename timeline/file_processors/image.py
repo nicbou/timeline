@@ -8,6 +8,7 @@ from timeline.models import TimelineFile, TimelineEntry, EntryType
 from typing import Iterable
 import logging
 import math
+import reverse_geocode
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +111,13 @@ def get_image_metadata(image_path: Path) -> dict:
                         exif['GPSInfo']['GPSLongitude'], exif['GPSInfo'].get('GPSLongitudeRef')
                     ),
                 }
+                reverse_geolocation = reverse_geocode.search(
+                    (
+                        (metadata['location']['latitude'], metadata['location']['longitude']),
+                    )
+                )[0]
+                metadata['location']['city'] = reverse_geolocation['city']
+                metadata['location']['country'] = reverse_geolocation['country']
             except ValueError:
                 logger.warning(f"Invalid GPS coordinates: "
                                f"{exif['GPSInfo']['GPSLatitude']}, { exif['GPSInfo']['GPSLongitude']}"
@@ -154,7 +162,6 @@ def process_image(file: TimelineFile, entries: Iterable[TimelineEntry], metadata
         try:
             image_data = get_image_metadata(file.file_path)
         except:
-            breakpoint()
             logger.exception(f"Could not process image metadata - {file.file_path}")
             return entries
 

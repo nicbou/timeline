@@ -5,8 +5,6 @@ import gpxpy
 
 
 def point_to_entry(file: TimelineFile, point) -> TimelineEntry:
-    print(point.time)
-
     return TimelineEntry(
         file_path=file.file_path,
         checksum=file.checksum,
