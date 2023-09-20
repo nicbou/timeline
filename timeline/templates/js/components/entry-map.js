@@ -13,6 +13,6 @@ export default Vue.component('entry-map', {
     },
   },
   template: `
-    <google-map class="entry-map" :markers="markers" v-if="markers.length"></google-map>
+    <google-map class="entry-map" :markers="markers" v-show="markers.length"></google-map>
   `
 });

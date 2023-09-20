@@ -78,8 +78,8 @@ export default Vue.component('timeline', {
           <small>{{ timelineDate.format('dddd') }}, {{ relativeTimelineDate }}</small>
         </h1>
         <spinner v-if="isLoading"></spinner>
-        <entry-map :entries="entries"></entry-map>
         <div class="entries">
+          <entry-map class="entry" :entries="entries"></entry-map>
           <component
             :entry="entry"
             :is="componentType(entry.entry_type)"
