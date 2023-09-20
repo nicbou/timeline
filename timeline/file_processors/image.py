@@ -1,6 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 from PIL import Image, ImageFile, ExifTags
+from PIL.ImageOps import exif_transpose
 from PIL.ExifTags import TAGS, GPSTAGS
 from timeline.file_processors import dates_from_file
 from timeline.models import TimelineFile, TimelineEntry, EntryType
@@ -141,6 +142,7 @@ def get_image_metadata(image_path: Path) -> dict:
 
 def make_thumbnail(image_path: Path, output_path: Path, max_width: int, max_height: int):
     with Image.open(image_path) as image:
+        exif_transpose(image, in_place=True)
         image.thumbnail((max_width, max_height), Image.LANCZOS)
         save_args = {'optimize': True, 'exact': True}
         output_path.parent.mkdir(parents=True, exist_ok=True)
