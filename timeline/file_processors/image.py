@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageFile, ExifTags
 from PIL.ExifTags import TAGS, GPSTAGS
 from timeline.file_processors import dates_from_file
 from timeline.models import TimelineFile, TimelineEntry, EntryType
@@ -8,11 +8,16 @@ from typing import Iterable
 import logging
 import math
 
-
 logger = logging.getLogger(__name__)
 
 
-image_extensions = {ext for ext, f in Image.registered_extensions().items() if f in Image.OPEN}
+image_extensions = {
+    ext for ext, f in Image.registered_extensions().items()
+    if f in Image.OPEN
+    and ext != '.psd'
+}
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def get_image_exif(pil_image) -> dict:
@@ -25,13 +30,11 @@ def get_image_exif(pil_image) -> dict:
     for (key, val) in raw_exif.items():
         exif[TAGS.get(key)] = val
 
-    gpsinfo_tags = {}
-    if 'GPSInfo' in exif:
-        for (key, val) in GPSTAGS.items():
-            if key in exif['GPSInfo']:
-                gpsinfo_tags[val] = exif['GPSInfo'][key]
-
-        exif['GPSInfo'] = gpsinfo_tags
+    exif['GPSInfo'] = {}
+    gps_info = raw_exif.get_ifd(ExifTags.IFD.GPSInfo)
+    for (tag_id, tag_name) in GPSTAGS.items():
+        if tag_id in gps_info:
+            exif['GPSInfo'][tag_name] = gps_info[tag_id]
 
     return exif
 
@@ -149,6 +152,7 @@ def process_image(file: TimelineFile, entries: Iterable[TimelineEntry], metadata
         try:
             image_data = get_image_metadata(file.file_path)
         except:
+            breakpoint()
             logger.exception(f"Could not process image metadata - {file.file_path}")
             return entries
 
@@ -160,7 +164,8 @@ def process_image(file: TimelineFile, entries: Iterable[TimelineEntry], metadata
 
         output_path = metadata_root / file.checksum / 'thumbnail.webp'
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        make_thumbnail(file.file_path, output_path, 800, 600)
+        if not output_path.exists():
+            make_thumbnail(file.file_path, output_path, 800, 600)
 
         entries.append(
             TimelineEntry(

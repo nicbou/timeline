@@ -20,7 +20,7 @@ setup(
     python_requires='>=3.11',
     install_requires=[
         'Markdown==3.4.3',
-        'Pillow==10.0.0',
+        'Pillow==10.0.1',
         'gpxpy==1.5.0',
     ],
     zip_safe=False,
