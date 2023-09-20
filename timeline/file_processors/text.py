@@ -8,10 +8,10 @@ import shutil
 
 def process_text(file: TimelineFile, entries: Iterable[TimelineEntry], metadata_root: Path) -> Iterable[TimelineEntry]:
     if file.file_path.suffix.lower() == '.txt':
-        output_path = metadata_root / file.checksum
-        output_path.mkdir(parents=True, exist_ok=True)
-        if not (output_path / 'content.txt').exists():
-            shutil.copy(file.file_path, output_path / 'content.txt')
+        output_path = metadata_root / file.checksum / 'content.txt'
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        if not output_path.exists():
+            shutil.copy(file.file_path, output_path)
 
         date_start, date_end = dates_from_file(file.file_path)
         entries.append(
