@@ -22,6 +22,6 @@ if __name__ == '__main__':
     generate(
         [Path('/Users/nicolas/Documents/Projects/AllAboutBerlin'), ],
         includerules=['*',],
-        ignorerules=['.git/*', ],
+        ignorerules=['.git/*', '.trashed*'],
         output_root=Path('/Users/nicolas/Downloads/timeline/out'),
     )
