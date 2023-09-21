@@ -63,6 +63,7 @@ h4{
     display: flex;
     gap: var(--grid-gap);
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .entry{
@@ -77,6 +78,8 @@ h4{
 }
 .entry.image figure{
     position: relative;
+    width: 100%;
+    height: 100%;
 }
 .entry.image figcaption{
     display: none;
