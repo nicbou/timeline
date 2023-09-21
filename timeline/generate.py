@@ -73,7 +73,7 @@ def generate(input_paths, includerules, ignorerules, output_root: Path, site_url
     # Generate entries .json for each day
     (output_root / 'entries').mkdir(parents=True, exist_ok=True)
     dates_with_entries = db.dates_with_entries(cursor)
-    for day, date_processed in dates_with_entries:
+    for day, date_processed in dates_with_entries.items():
         day_json_path = output_root / 'entries' / f"{day.strftime('%Y-%m-%d')}.json"
         with day_json_path.open('w') as json_file:
             json.dump({
