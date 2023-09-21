@@ -69,18 +69,16 @@ def generate(input_paths, includerules, ignorerules, output_root: Path, site_url
     connection.commit()
 
     templates_root = path(package=templates, resource="").__enter__()
-    new_page_count = 0
 
     # Generate entries .json for each day
     (output_root / 'entries').mkdir(parents=True, exist_ok=True)
-    for day, date_processed in db.dates_with_entries(cursor).items():
+    dates_with_entries = db.dates_with_entries(cursor)
+    for day, date_processed in dates_with_entries:
         day_json_path = output_root / 'entries' / f"{day.strftime('%Y-%m-%d')}.json"
-        if not day_json_path.exists() or date_processed.timestamp() > day_json_path.stat().st_mtime:
-            new_page_count += 1
-            with day_json_path.open('w') as json_file:
-                json.dump({
-                    'entries': [entry.to_json_dict() for entry in db.get_entries_for_date(cursor, day)],
-                }, json_file)
+        with day_json_path.open('w') as json_file:
+            json.dump({
+                'entries': [entry.to_json_dict() for entry in db.get_entries_for_date(cursor, day)],
+            }, json_file)
 
     # Copy frontend code and assets
     for file in get_files_in_paths([templates_root, ]):
@@ -101,4 +99,4 @@ def generate(input_paths, includerules, ignorerules, output_root: Path, site_url
     with js_config_path.open('w') as config_file:
         config_file.write(config)
 
-    logger.info(f"Generated {new_page_count} date pages")
+    logger.info(f"Generated {len(dates_with_entries)} date pages")
