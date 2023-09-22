@@ -68,25 +68,21 @@ export default Vue.component('timeline', {
     }
   },
   template: `
-    <div id="layout">
+    <main id="layout">
       <header>
         <timeline-nav id="timeline-nav"></timeline-nav>
-      </header>
-      <main>
         <h1 class="current-date">
           <time>{{ timelineDate.format('LL') }}</time>
           <small>{{ timelineDate.format('dddd') }}, {{ relativeTimelineDate }}</small>
         </h1>
-        <spinner v-if="isLoading"></spinner>
-        <div class="entries">
-          <entry-map class="entry" :entries="entries"></entry-map>
-          <component
-            :entry="entry"
-            :is="componentType(entry.entry_type)"
-            v-for="entry in entries"
-            v-if="!isLoading"></component>
-        </div>
-      </main>
-    </div>
+      </header>
+      <spinner v-if="isLoading"></spinner>
+      <entry-map class="entry" :entries="entries"></entry-map>
+      <component
+        :entry="entry"
+        :is="componentType(entry.entry_type)"
+        v-for="entry in entries"
+        v-if="!isLoading"></component>
+    </main>
   `
 });
