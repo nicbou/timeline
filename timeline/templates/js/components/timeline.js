@@ -1,5 +1,6 @@
 import SpinnerComponent from './spinner.js';
 import TimelineMap from './entry-map.js';
+import TransactionsList from './transactions.js';
 import TimelineNav from './timeline-nav.js';
 import TimelineHtmlEntry from './entries/html.js';
 import TimelineImageEntry from './entries/image.js';
@@ -56,6 +57,9 @@ export default Vue.component('timeline', {
     entries: function() {
       return this.$store.getters['timeline/filteredEntries'];
     },
+    transactions: function() {
+      return this.entries.filter(e => e.entry_type === 'transaction');
+    },
     isLoading: function() {
       return this.$store.state.timeline.entriesRequestStatus === RequestStatus.PENDING;
     },
@@ -77,12 +81,13 @@ export default Vue.component('timeline', {
         </h1>
       </header>
       <spinner v-if="isLoading"></spinner>
-      <entry-map class="entry" :entries="entries"></entry-map>
+      <entry-map :entries="entries"></entry-map>
+      <transactions :entries="transactions" v-if="transactions.length"></transactions>
       <component
         :entry="entry"
         :is="componentType(entry.entry_type)"
         v-for="entry in entries"
-        v-if="!isLoading"></component>
+        v-if="componentType(entry.entry_type) && !isLoading"></component>
     </main>
   `
 });

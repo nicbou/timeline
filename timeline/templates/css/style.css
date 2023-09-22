@@ -59,13 +59,16 @@ em{font-style:italic;}
 
     /* Colours */
     --c-page: #f6f5f1;
+    --c-widget: #E6E3E1;
     --c-text: #353534;
     --c-text-light: #73706D;
+
+    --c-text-error: #c03;
 
     --c-text-inverted: var(--c-page);
     --c-page-inverted: var(--c-text);
 
-    --c-border-light: #E6E3E1;
+    --c-border-light: var(--c-widget);
 
     /* Borders */
     --b-light: 1px solid var(--c-border-light);
@@ -107,6 +110,26 @@ h4{
     margin: var(--m) 0;
 }
 
+strong, b{
+    font-weight:700
+}
+em, i{
+    font-style:italic;
+}
+a{
+    position:
+    relative;
+    color: var(--color-link);
+    border-bottom: 2px solid transparent;
+    text-decoration: none;
+    transition: border 0.2s, top 0.2s;
+    top: 0
+}
+    a:hover{
+        border-color: var(--color-link);
+        top:-1px
+    }
+
 #layout{
     display: grid;
     grid-template-columns: repeat(auto-fit, var(--grid-w));
@@ -119,6 +142,55 @@ h4{
 header{
     grid-column: 1 / -1;
 }
+
+.transactions summary{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: var(--s);
+    border-radius: var(--b-radius);
+    border: var(--b-light);
+    background: var(--c-widget);
+    font-family: var(--f-data);
+}
+    .transactions summary .amount{
+        font-size: var(--l);
+    }
+    .transactions summary .transaction-count{
+        font-size: var(--f-s);
+        color: var(--c-text-light);
+        margin-top: var(--xs);
+        display: block;
+    }
+        .total-expenses .amount{
+            color: var(--c-text-error);
+        }
+
+.transaction{
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    font-family: var(--f-data);
+    gap: var(--s);
+    margin: var(--s) 0;
+    padding: var(--s);
+    border-radius: var(--b-radius);
+    border: var(--b-light);
+    background: var(--c-widget);
+    align-items: center;
+}
+    .transaction img{
+        width: 32px;
+        border-radius: 50%;
+    }
+    .transaction .amount{
+        min-width: 5em;
+        text-align: right;
+    }
+    .transaction .description{
+        font-size: var(--f-s);
+        color: var(--c-text-light);
+        margin-top: var(--xs);
+        display: block;
+    }
 
 .entry{
     max-width: 100%;
