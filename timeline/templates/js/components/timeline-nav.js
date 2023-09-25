@@ -2,17 +2,17 @@ export default Vue.component('timeline-nav', {
   computed: {
     timelineDate: {
       get() {
-        return moment(this.$store.state.route.query.date, 'YYYY-MM-DD', true);
+        return moment(this.$route.query.date, 'YYYY-MM-DD', true);
       },
       set(newDate) {
-        const queryParams = { ...this.$store.state.route.query };
+        const queryParams = { ...this.$route.query };
         queryParams.date = moment.min(newDate, this.today).format('YYYY-MM-DD');
         return this.$router.push({ name: 'timeline', query: queryParams });
       }
     },
     timelineDateIso: {
       get() {
-        return this.$store.state.route.query.date;
+        return this.$route.query.date;
       },
       set(newDate) {
         return this.timelineDate = moment(newDate, 'YYYY-MM-DD', true);

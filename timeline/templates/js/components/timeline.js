@@ -22,33 +22,19 @@ function makeRouteValid(to, from, next) {
 }
 
 export default Vue.component('timeline', {
-  data: function() {
-    return {
-      selectedEntry: null,
-    }
-  },
   created: function() {
-    this.$store.dispatch('timeline/getEntries').catch(response => {
-      if([401, 403].includes(response.status)) {
-        this.$router.push({name: 'login'});
-      }
-    });
+    this.$store.dispatch('timeline/getEntries', { date: this.$route.query.date });
   },
   watch: {
     '$route.query': function() {
-      this.selectedEntry = null;
-      this.$store.dispatch('timeline/getEntries', true).catch(response => {
-        if([401, 403].includes(response.status)) {
-          this.$router.push({name: 'login'});
-        }
-      });
+      this.$store.dispatch('timeline/getEntries', { date: this.$route.query.date, forceRefresh: true, });
     }
   },
   beforeRouteEnter: makeRouteValid,
   beforeRouteUpdate: makeRouteValid,
   computed: {
     timelineDate: function(){
-      return moment(this.$store.state.route.query.date, 'YYYY-MM-DD', true);
+      return moment(this.$route.query.date, 'YYYY-MM-DD', true);
     },
     relativeTimelineDate: function() {
       const duration = this.timelineDate.diff(moment().startOf('day'));
@@ -97,7 +83,7 @@ export default Vue.component('timeline', {
         :entry="entry"
         :is="componentType(entry.entry_type)"
         v-for="entry in entries"
-        v-if="componentType(entry.entry_type) && !isLoading"></component>
+        v-if="componentType(entry.entry_type)"></component>
     </main>
   `
 });

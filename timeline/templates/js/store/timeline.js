@@ -43,10 +43,10 @@ export default {
     },
   },
   actions: {
-    async getEntries(context, forceRefresh=false) {
+    async getEntries(context, { date, forceRefresh }) {
       if (context.state.entriesRequestStatus === RequestStatus.NONE || forceRefresh) {
         context.commit('ENTRIES_REQUEST_PENDING');
-        const entriesRequestPromise = fetch(`${config.domain}/entries/${this.state.route.query.date}.json`)
+        const entriesRequestPromise = fetch(`${config.domain}/entries/${date}.json`)
           .then(response => response.ok ? response.json() : Promise.reject(response))
           .then(json => {
             context.commit('SET_ENTRIES', json.entries);
