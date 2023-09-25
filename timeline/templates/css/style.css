@@ -62,6 +62,7 @@ em{font-style:italic;}
     --c-widget: #0603010C;
     --c-text: #353534;
     --c-text-light: #73706D;
+    --c-text-link: #64719c;
 
     --c-text-error: #c03;
 
@@ -167,6 +168,10 @@ header{
             grid-column: 1 / -1;
             margin-bottom: var(--s);
             border-bottom: var(--b-light);
+        }
+        .transactions .summary svg path{
+            stroke: var(--c-text-link);
+            stroke-width: 2px;
         }
         .transactions .summary svg line{
             stroke: var(--c-border-light);

@@ -75,8 +75,6 @@ export default Vue.component('transactions', {
         <svg viewBox="0 -10 380 70" class="chart">
           <path
             fill="transparent"
-            stroke="#0074d9"
-            stroke-width="2px"
             vector-effect="non-scaling-stroke"
             :d="graphPathPoint(380, 50)"/>
           <line
