@@ -28,7 +28,7 @@ export default Vue.component('html-entry', {
           <h2>{{ fileName }}</h2>
         </summary>
         <div class="content" v-html="html"></div>
-      <details>
+      </details>
     </article>
   `
 });
