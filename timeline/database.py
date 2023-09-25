@@ -293,6 +293,37 @@ def get_entries_for_date(cursor, timeline_date: date):
         )
 
 
+def get_entries_by_type(cursor, entry_type: EntryType):
+    cursor.execute(
+        '''
+            SELECT
+                entries.file_path,
+                files.checksum,
+                entry_type,
+                date_start,
+                date_end,
+                entry_data
+            FROM timeline_entries entries
+            INNER JOIN timeline_files files
+                ON entries.file_path = files.file_path
+            WHERE
+                entry_type=:type
+        ''',
+        {
+            'type': entry_type.value
+        },
+    )
+    for row in cursor.fetchall():
+        yield TimelineEntry(
+            file_path=Path(row[0]),
+            checksum=row[1],
+            entry_type=EntryType(row[2]),
+            date_start=date_from_db(row[3]),
+            date_end=date_from_db(row[4]),
+            data=json.loads(row[5]),
+        )
+
+
 def delete_timeline_entries(cursor, file_path: Path):
     cursor.execute(
         "DELETE FROM timeline_entries WHERE file_path=?",

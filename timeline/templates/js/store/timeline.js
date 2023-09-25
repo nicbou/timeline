@@ -5,6 +5,7 @@ export default {
   namespaced: true,
   state: {
     entries: [],
+    finances: {},
     entriesRequestStatus: RequestStatus.NONE,
     entriesRequestPromise: null,
   },
@@ -24,11 +25,22 @@ export default {
     ENTRIES_REQUEST_FAILURE(state) {
       state.entriesRequestStatus = RequestStatus.FAILURE;
     },
-  },
-  getters: {
-    filteredEntries: state => {
-      return state.entries;
-    }
+
+    SET_FINANCES(state, finances) {
+      state.finances = finances;
+    },
+    SET_FINANCES_REQUEST_PROMISE(state, promise) {
+      state.financesRequestPromise = promise;
+    },
+    FINANCES_REQUEST_SUCCESS(state) {
+      state.financesRequestStatus = RequestStatus.SUCCESS;
+    },
+    FINANCES_REQUEST_PENDING(state) {
+      state.financesRequestStatus = RequestStatus.PENDING;
+    },
+    FINANCES_REQUEST_FAILURE(state) {
+      state.financesRequestStatus = RequestStatus.FAILURE;
+    },
   },
   actions: {
     async getEntries(context, forceRefresh=false) {
@@ -50,6 +62,26 @@ export default {
         return entriesRequestPromise;
       }
       return context.state.entriesRequestPromise;
+    },
+    async getFinances(context, forceRefresh=false) {
+      if (context.state.financesRequestStatus === RequestStatus.NONE || forceRefresh) {
+        context.commit('FINANCES_REQUEST_PENDING');
+        const financesRequestPromise = fetch(`${config.domain}/entries/finances.json`)
+          .then(response => response.ok ? response.json() : Promise.reject(response))
+          .then(json => {
+            context.commit('SET_FINANCES', json);
+            context.commit('FINANCES_REQUEST_SUCCESS');
+            return context.state.finances;
+          })
+          .catch(async response => {
+            context.commit('SET_FINANCES', []);
+            context.commit('FINANCES_REQUEST_FAILURE');
+            return Promise.reject(response);
+          });
+        context.commit('SET_FINANCES_REQUEST_PROMISE', financesRequestPromise);
+        return financesRequestPromise;
+      }
+      return context.state.financesRequestPromise;
     },
   }
 };

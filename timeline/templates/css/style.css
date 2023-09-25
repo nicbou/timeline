@@ -59,7 +59,7 @@ em{font-style:italic;}
 
     /* Colours */
     --c-page: #f6f5f1;
-    --c-widget: #E6E3E1;
+    --c-widget: #0603010C;
     --c-text: #353534;
     --c-text-light: #73706D;
 
@@ -68,15 +68,17 @@ em{font-style:italic;}
     --c-text-inverted: var(--c-page);
     --c-page-inverted: var(--c-text);
 
-    --c-border-light: var(--c-widget);
+    --c-border-light: #06030122;
 
     /* Borders */
     --b-light: 1px solid var(--c-border-light);
 
     /* Entry grid */
     --grid-gap: var(--s);
-    --grid-w: 400px;
-    --grid-h: 300px;
+    --grid-w: 12rem;
+    --grid-h: 9rem;
+
+    --grid-h2: calc(9rem * 2 + var(--grid-gap));
 }
 
 body{
@@ -132,6 +134,7 @@ a{
 
 #layout{
     display: grid;
+    max-width: calc(var(--grid-w) * 4 + var(--grid-gap) * 3);
     grid-template-columns: repeat(auto-fit, var(--grid-w));
     grid-auto-flow: dense;
     gap: var(--grid-gap);
@@ -143,54 +146,72 @@ header{
     grid-column: 1 / -1;
 }
 
-.transactions summary{
+.transactions{
+    grid-column: 1 / -1;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    padding: var(--s);
-    border-radius: var(--b-radius);
-    border: var(--b-light);
-    background: var(--c-widget);
-    font-family: var(--f-data);
+    grid-auto-flow: dense;
+    gap: var(--grid-gap);
 }
-    .transactions summary .amount{
-        font-size: var(--l);
+    .transactions .summary{
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: subgrid;
+        padding: var(--s);
+        gap: var(--grid-gap);
+        border-radius: var(--b-radius);
+        background: var(--c-widget);
+        font-family: var(--f-data);
     }
-    .transactions summary .transaction-count{
-        font-size: var(--f-s);
-        color: var(--c-text-light);
-        margin-top: var(--xs);
-        display: block;
-    }
-        .total-expenses .amount{
-            color: var(--c-text-error);
+        .transactions .summary svg{
+            grid-column: 1 / -1;
+            margin-bottom: var(--s);
+            border-bottom: var(--b-light);
         }
+        .transactions .summary svg line{
+            stroke: var(--c-border-light);
+        }
+        .transactions .summary .amount{
+            font-size: var(--l);
+        }
+        .transactions .summary .transaction-count{
+            font-size: var(--f-s);
+            color: var(--c-text-light);
+            margin-top: var(--xs);
+            display: block;
+        }
+            .total-expenses .amount{
+                color: var(--c-text-error);
+            }
 
-.transaction{
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    font-family: var(--f-data);
-    gap: var(--s);
-    margin: var(--s) 0;
-    padding: var(--s);
-    border-radius: var(--b-radius);
-    border: var(--b-light);
-    background: var(--c-widget);
-    align-items: center;
-}
-    .transaction img{
-        width: 32px;
-        border-radius: 50%;
+    .transaction{
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        font-family: var(--f-data);
+        gap: var(--grid-gap);
+        margin: var(--s) 0;
+        padding-bottom: var(--s);
+        border-radius: var(--b-radius);
+        border-bottom: var(--b-light);
+        align-items: center;
     }
-    .transaction .amount{
-        min-width: 5em;
-        text-align: right;
-    }
-    .transaction .description{
-        font-size: var(--f-s);
-        color: var(--c-text-light);
-        margin-top: var(--xs);
-        display: block;
-    }
+        .transaction img{
+            width: 32px;
+            border-radius: 50%;
+        }
+        .transaction .amount{
+            min-width: 5em;
+            text-align: right;
+        }
+            .expenses .transaction .amount{
+                color: var(--c-text-error);
+            }
+        .transaction .description{
+            font-size: var(--f-s);
+            color: var(--c-text-light);
+            margin-top: var(--xs);
+            display: block;
+        }
 
 .entry{
     max-width: 100%;
@@ -247,7 +268,8 @@ header{
 }
 
 .entry-map{
-    grid-column: 1 / -2;
+    grid-column: 1 / -1;
     width: 100%;
-    height: var(--grid-h);
+    height: var(--grid-h2);
+    border-radius: var(--b-radius);
 }

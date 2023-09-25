@@ -55,7 +55,10 @@ export default Vue.component('timeline', {
       return duration !== 0 ? moment.duration(duration).humanize(true) : 'today';
     },
     entries: function() {
-      return this.$store.getters['timeline/filteredEntries'];
+      return this.$store.state.timeline.entries;
+    },
+    finances: function() {
+      return this.$store.state.timeline.finances;
     },
     transactions: function() {
       return this.entries.filter(e => e.entry_type === 'transaction');
@@ -66,10 +69,17 @@ export default Vue.component('timeline', {
   },
   methods: {
     componentType(entryType) {
-      return {
+      const componentName = {
         diary: 'html-entry',
       }[entryType] || entryType + '-entry';
+
+      if(componentName in Vue.options.components){
+        return componentName;
+      }
     }
+  },
+  mounted(){
+    this.$store.dispatch('timeline/getFinances', true);
   },
   template: `
     <main id="layout">
@@ -82,7 +92,7 @@ export default Vue.component('timeline', {
       </header>
       <spinner v-if="isLoading"></spinner>
       <entry-map :entries="entries"></entry-map>
-      <transactions :entries="transactions" v-if="transactions.length"></transactions>
+      <transactions :entries="transactions" :finances="finances" :current-date="timelineDate"></transactions>
       <component
         :entry="entry"
         :is="componentType(entry.entry_type)"

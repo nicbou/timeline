@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from importlib.resources import path
 from pathlib import Path
 from timeline.file_processors.gpx import process_gpx
@@ -6,7 +7,7 @@ from timeline.file_processors.image import process_image
 from timeline.file_processors.n26 import process_n26_transactions
 from timeline.file_processors.text import process_text, process_markdown
 from timeline.filesystem import get_files_in_paths
-from timeline.models import TimelineFile
+from timeline.models import TimelineFile, EntryType
 from timeline import templates
 from typing import Iterable
 import json
@@ -61,6 +62,37 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
     logger.info(f"Processed {new_file_count} new files")
 
 
+def generate_daily_entry_lists(cursor, output_path: Path):
+    logger.info("Generating entry lists by day")
+    # Generate entries .json for each day
+    output_path.mkdir(parents=True, exist_ok=True)
+    dates_with_entries = db.dates_with_entries(cursor)
+    for day, date_processed in dates_with_entries.items():
+        day_json_path = output_path / f"{day.strftime('%Y-%m-%d')}.json"
+        with day_json_path.open('w') as json_file:
+            json.dump({
+                'entries': [entry.to_json_dict() for entry in db.get_entries_for_date(cursor, day)],
+            }, json_file)
+
+    logger.info(f"Generated {len(dates_with_entries)} entry lists")
+
+
+def generate_financial_report(cursor, output_path: Path):
+    logger.info("Generating transaction report")
+    transaction_amount_by_day = {}
+    for entry in db.get_entries_by_type(cursor, EntryType.TRANSACTION):
+        amount = Decimal(entry.data['amount'])
+        date = entry.date_start.strftime('%Y-%m-%d')
+        transaction_amount_by_day.setdefault(date, Decimal('0'))
+        transaction_amount_by_day[date] += amount
+
+    for key in transaction_amount_by_day:
+        transaction_amount_by_day[key] = str(transaction_amount_by_day[key])
+
+    with output_path.open('w') as json_file:
+        json.dump(transaction_amount_by_day, json_file)
+
+
 def generate(input_paths, includerules, ignorerules, output_root: Path, site_url: str = '', google_maps_api_key: str = ''):
     metadata_root = output_root / 'metadata'
     metadata_root.mkdir(parents=True, exist_ok=True)
@@ -72,15 +104,8 @@ def generate(input_paths, includerules, ignorerules, output_root: Path, site_url
 
     templates_root = path(package=templates, resource="").__enter__()
 
-    # Generate entries .json for each day
-    (output_root / 'entries').mkdir(parents=True, exist_ok=True)
-    dates_with_entries = db.dates_with_entries(cursor)
-    for day, date_processed in dates_with_entries.items():
-        day_json_path = output_root / 'entries' / f"{day.strftime('%Y-%m-%d')}.json"
-        with day_json_path.open('w') as json_file:
-            json.dump({
-                'entries': [entry.to_json_dict() for entry in db.get_entries_for_date(cursor, day)],
-            }, json_file)
+    generate_daily_entry_lists(cursor, output_root / 'entries')
+    generate_financial_report(cursor, output_root / 'entries' / 'finances.json')
 
     # Copy frontend code and assets
     for file in get_files_in_paths([templates_root, ]):
@@ -100,5 +125,3 @@ def generate(input_paths, includerules, ignorerules, output_root: Path, site_url
     js_config_path.unlink()  # This is a hard link to the original. Remove it and create a copy of it.
     with js_config_path.open('w') as config_file:
         config_file.write(config)
-
-    logger.info(f"Generated {len(dates_with_entries)} date pages")
