@@ -1,4 +1,15 @@
 export default Vue.component('timeline-nav', {
+  data() {
+    return {
+      keypressListener: null,
+    };
+  },
+  mounted() {
+    this.keypressListener = window.addEventListener('keydown', this.onKeydown);
+  },
+  destroyed(){
+    window.removeEventListener(this.keypressListener);
+  },
   computed: {
     timelineDate: {
       get() {
@@ -18,28 +29,47 @@ export default Vue.component('timeline-nav', {
         return this.timelineDate = moment(newDate, 'YYYY-MM-DD', true);
       }
     },
-    today: function(){
+    today(){
       return moment().startOf('day');
     },
-    showTomorrow: function() {
+    showTomorrow() {
       return moment(this.timelineDate).add('days', 1).diff(this.today) <= 0
     },
-    showNextWeek: function() {
+    showNextWeek() {
       return moment(this.timelineDate).add('weeks', 1).diff(this.today) <= 0
     },
-    showNextMonth: function() {
+    showNextMonth() {
       return moment(this.timelineDate).add('months', 1).diff(this.today) <= 0
     },
-    showNextYear: function() {
+    showNextYear() {
       return moment(this.timelineDate).add('years', 1).diff(this.today) <= 0
     },
   },
   methods: {
-    pickTimelineDate: function(date) {
+    pickTimelineDate(date) {
       this.timelineDate = moment(date);
     },
-    moveTimelineDate: function(quantity, unit) {
+    moveTimelineDate(quantity, unit) {
       this.timelineDate = moment(this.timelineDate).add(quantity, unit);
+    },
+    onKeydown(event) {
+      let timeUnit = 'days';
+      if(event.altKey && event.shiftKey){
+        timeUnit = 'years';
+      }
+      else if(event.altKey){
+        timeUnit = 'months';
+      }
+      else if(event.shiftKey) {
+        timeUnit = 'weeks';
+      }
+
+      if(event.key === "ArrowLeft"){
+        this.moveTimelineDate(timeUnit, -1)
+      }
+      else if(event.key === "ArrowRight"){
+        this.moveTimelineDate(timeUnit, +1)
+      }
     },
   },
   template: `
