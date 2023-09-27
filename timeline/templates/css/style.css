@@ -196,7 +196,6 @@ header{
         gap: var(--grid-gap);
         margin: var(--s) 0;
         padding-bottom: var(--s);
-        border-radius: var(--b-radius);
         border-bottom: var(--b-light);
         align-items: center;
     }

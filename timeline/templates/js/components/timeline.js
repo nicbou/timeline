@@ -22,34 +22,34 @@ function makeRouteValid(to, from, next) {
 }
 
 export default Vue.component('timeline', {
-  created: function() {
+  created() {
     this.$store.dispatch('timeline/getEntries', { date: this.$route.query.date });
   },
   watch: {
     '$route.query': function() {
       this.$store.dispatch('timeline/getEntries', { date: this.$route.query.date, forceRefresh: true, });
-    }
+    },
   },
   beforeRouteEnter: makeRouteValid,
   beforeRouteUpdate: makeRouteValid,
   computed: {
-    timelineDate: function(){
+    timelineDate(){
       return moment(this.$route.query.date, 'YYYY-MM-DD', true);
     },
-    relativeTimelineDate: function() {
+    relativeTimelineDate() {
       const duration = this.timelineDate.diff(moment().startOf('day'));
       return duration !== 0 ? moment.duration(duration).humanize(true) : 'today';
     },
-    entries: function() {
+    entries() {
       return this.$store.state.timeline.entries;
     },
-    finances: function() {
+    finances() {
       return this.$store.state.timeline.finances;
     },
-    transactions: function() {
+    transactions() {
       return this.entries.filter(e => e.entry_type === 'transaction');
     },
-    isLoading: function() {
+    isLoading() {
       return this.$store.state.timeline.entriesRequestStatus === RequestStatus.PENDING;
     },
   },
@@ -62,7 +62,7 @@ export default Vue.component('timeline', {
       if(componentName in Vue.options.components){
         return componentName;
       }
-    }
+    },
   },
   mounted(){
     this.$store.dispatch('timeline/getFinances', true);
