@@ -47,6 +47,9 @@ export default Vue.component('timeline-nav', {
         },
       }
     },
+    moveTimelineDate(quantity, unit){
+      this.$router.push(this.routerDateLink(quantity, unit));
+    },
     onKeydown(event) {
       let timeUnit = 'days';
       if(event.altKey && event.shiftKey){
