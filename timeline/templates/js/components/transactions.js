@@ -70,49 +70,48 @@ export default Vue.component('transactions', {
     }
   },
   template: `
-    <div class="transactions">
-      <div class="summary" @click="showTransactions = !showTransactions">
-        <svg viewBox="0 -10 380 70" class="chart">
-          <path
-            fill="transparent"
-            vector-effect="non-scaling-stroke"
-            :d="graphPathPoint(380, 50)"/>
-          <line
-            stroke-width="1px"
-            vector-effect="non-scaling-stroke"
-            x1="190"
-            x2="190"
-            y1="0"
-            y2="100"/>
-        </svg>
-        <div class="total-income">
-          <strong class="amount">+{{ formatCurrency(totals.income) }}</strong>
-          <small class="transaction-count">{{ totals.incomeCount || 'No' }} transactions</small>
-        </div>
-        <div class="total-expenses">
-          <strong class="amount">{{ formatCurrency(totals.expenses) }}</strong>
-          <small class="transaction-count">{{ totals.expenseCount || 'No' }} transactions</small>
-        </div>
+    <div class="transactions" @click="showTransactions = !showTransactions">
+      <svg viewBox="0 -10 380 70" class="chart">
+        <path
+          fill="transparent"
+          vector-effect="non-scaling-stroke"
+          :d="graphPathPoint(380, 50)"/>
+        <line
+          stroke-width="1px"
+          vector-effect="non-scaling-stroke"
+          x1="190"
+          x2="190"
+          y1="0"
+          y2="100"/>
+      </svg>
+
+      <div class="income">
+        <h3>Income</h3>
+        <strong class="total-amount">+{{ formatCurrency(totals.income) }}</strong>
+        <ul v-if="entries.length && showTransactions" class="income">
+          <li v-for="entry in incomeEntries">
+            <img src="/images/n26.png">
+            <div class="details">
+              <span class="other-party">{{ entry.data.otherParty }}</span>
+              <small v-if="entry.data.description" class="description">{{ entry.data.description }}</small>
+            </div>
+            <span class="amount">{{ formatCurrency(entry.data.amount) }}</span>
+          </li>
+        </ul>
       </div>
-      <div v-if="entries.length && showTransactions" class="income">
-        <div class="transaction" v-for="entry in incomeEntries">
-          <img src="/images/n26.png">
-          <div class="details">
-            <span class="other-party">{{ entry.data.otherParty }}</span>
-            <small v-if="entry.data.description" class="description">{{ entry.data.description }}</small>
-          </div>
-          <span class="amount">{{ formatCurrency(entry.data.amount) }}</span>
-        </div>
-      </div>
-      <div v-if="entries.length && showTransactions" class="expenses">
-        <div class="transaction" v-for="entry in expenseEntries">
-          <img src="/images/n26.png">
-          <div class="details">
-            <span class="other-party">{{ entry.data.otherParty }}</span>
-            <small v-if="entry.data.description" class="description">{{ entry.data.description }}</small>
-          </div>
-          <span class="amount">{{ formatCurrency(entry.data.amount) }}</span>
-        </div>
+      <div class="expenses">
+        <h3>Expenses</h3>
+        <strong class="total-amount">{{ formatCurrency(totals.expenses) }}</strong>
+        <ul v-if="entries.length && showTransactions" class="expenses">
+          <li v-for="entry in expenseEntries">
+            <img src="/images/n26.png">
+            <div class="details">
+              <span class="other-party">{{ entry.data.otherParty }}</span>
+              <small v-if="entry.data.description" class="description">{{ entry.data.description }}</small>
+            </div>
+            <span class="amount">{{ formatCurrency(entry.data.amount) }}</span>
+          </li>
+        </ul>
       </div>
     </div>
   `

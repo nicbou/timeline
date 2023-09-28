@@ -2,7 +2,8 @@ import SpinnerComponent from './spinner.js';
 import TimelineMap from './entry-map.js';
 import TransactionsList from './transactions.js';
 import TimelineNav from './timeline-nav.js';
-import TimelineHtmlEntry from './entries/html.js';
+import TimelineDiaryEntry from './entries/diary.js';
+import TimelineEventEntry from './entries/event.js';
 import TimelineImageEntry from './entries/image.js';
 import TimelineTextEntry from './entries/text.js';
 import { RequestStatus } from './../models/requests.js';
@@ -55,10 +56,7 @@ export default Vue.component('timeline', {
   },
   methods: {
     componentType(entryType) {
-      const componentName = {
-        diary: 'html-entry',
-      }[entryType] || entryType + '-entry';
-
+      const componentName = entryType + '-entry';
       if(componentName in Vue.options.components){
         return componentName;
       }

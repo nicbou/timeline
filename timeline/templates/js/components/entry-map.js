@@ -4,7 +4,7 @@ export default Vue.component('entry-map', {
   props: ['entries',],
   computed: {
     markers: function() {
-      return this.entries.filter(e => e.data.location).map(e => {
+      return this.entries.filter(e => e.data.location && e.data.location.latitude && e.data.location.longitude).map(e => {
         return {
           lat: e.data.location.latitude,
           lng: e.data.location.longitude,
