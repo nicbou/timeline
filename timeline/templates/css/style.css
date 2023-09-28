@@ -279,6 +279,10 @@ a{
             height: 100%;
             object-fit: contain;
         }
+            .entry.image.pdf img{
+                object-fit: cover;
+                object-position: center top;
+            }
 
 .entry.diary{
     font-family: var(--f-text);

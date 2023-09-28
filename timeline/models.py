@@ -9,6 +9,7 @@ class EntryType(Enum):
     VIDEO = 'video'
     TEXT = 'text'
     HTML = 'html'
+    PDF = 'pdf'
 
     MESSAGE = 'message'
     EVENT = 'event'

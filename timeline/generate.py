@@ -6,6 +6,7 @@ from timeline.file_processors.calendar import process_icalendar
 from timeline.file_processors.gpx import process_gpx
 from timeline.file_processors.image import process_image
 from timeline.file_processors.n26 import process_n26_transactions
+from timeline.file_processors.pdf import process_pdf
 from timeline.file_processors.text import process_text, process_markdown
 from timeline.filesystem import get_files_in_paths
 from timeline.models import TimelineFile, EntryType
@@ -40,12 +41,13 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
     )
 
     timeline_file_processors = [
-        process_text,
-        process_markdown,
-        process_image,
         process_gpx,
-        process_n26_transactions,
         process_icalendar,
+        process_image,
+        process_markdown,
+        process_n26_transactions,
+        process_pdf,
+        process_text,
     ]
 
     new_file_count = 0
