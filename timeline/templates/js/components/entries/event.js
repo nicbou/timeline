@@ -15,7 +15,7 @@ export default Vue.component('event-entry', {
       return this.entry.date_end ? new Date(this.entry.date_end) : null;
     },
     description: function() {
-      return this.entry.data.description.trim().replaceAll('<br><br>', '<br>').replaceAll('\n', '<br>');
+      return (this.entry.data.description || '').trim().replaceAll('<br><br>', '<br>').replaceAll('\n', '<br>');
     }
   },
   template: `
