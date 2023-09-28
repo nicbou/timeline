@@ -90,7 +90,7 @@ body{
 }
 
 h1{
-    font-size: var(--xxl);
+    font-size: var(--xxxl);
     margin: var(--xl) 0;
     font-family: var(--f-text);
     line-height: var(--line-height-heading);
@@ -149,9 +149,29 @@ a{
     justify-content: center;
 }
 
-header{
+.timeline-nav{
+    width: 100%;
+    max-width: var(--grid-w2);
+    margin: 0 auto;
     grid-column: 1 / -1;
+    display: grid;
+    grid-template: auto 1fr auto;
+    grid-template-areas: "back date forward";
+    align-items: center;
+    text-align: center;
 }
+    .timeline-nav .back, .timeline-nav .forward{
+        display: flex;
+        justify-content: space-evenly;
+    }
+        .timeline-nav .back{
+            text-align: left;
+        }
+        .timeline-nav .forward{
+            text-align: right;
+        }
+        .timeline-nav .back a:before{content: '❮ '}
+        .timeline-nav .forward a:after{content: ' ❯'}
 
 .entry-map, .transactions, .entry{
     width: 100%;

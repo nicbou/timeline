@@ -37,10 +37,6 @@ export default Vue.component('timeline', {
     timelineDate(){
       return moment(this.$route.query.date, 'YYYY-MM-DD', true);
     },
-    relativeTimelineDate() {
-      const duration = this.timelineDate.diff(moment().startOf('day'));
-      return duration !== 0 ? moment.duration(duration).humanize(true) : 'today';
-    },
     entries() {
       return this.$store.state.timeline.entries;
     },
@@ -67,13 +63,7 @@ export default Vue.component('timeline', {
   },
   template: `
     <main id="layout">
-      <header>
-        <timeline-nav id="timeline-nav"></timeline-nav>
-        <h1 class="current-date">
-          <time>{{ timelineDate.format('LL') }}</time>
-          <small>{{ timelineDate.format('dddd') }}, {{ relativeTimelineDate }}</small>
-        </h1>
-      </header>
+      <timeline-nav id="timeline-nav"></timeline-nav>
       <spinner v-if="isLoading"></spinner>
       <entry-map :entries="entries"></entry-map>
       <transactions :entries="transactions" :finances="finances" :current-date="timelineDate"></transactions>
