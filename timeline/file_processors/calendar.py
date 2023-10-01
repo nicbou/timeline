@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from icalendar import Calendar
 from pathlib import Path
 from timeline.models import TimelineFile, TimelineEntry, EntryType
@@ -34,7 +34,7 @@ def process_icalendar(file: TimelineFile, entries: Iterable[TimelineEntry], meta
                         'name': event.get('LOCATION')
                     }
 
-                date_end = normalize_date(event['DTEND'].dt) if event.get('DTEND') else None
+                date_end = normalize_date(event['DTEND'].dt) - timedelta(seconds=1) if event.get('DTEND') else None
 
                 entries.append(
                     TimelineEntry(
