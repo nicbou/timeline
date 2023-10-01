@@ -2,6 +2,7 @@
 from pathlib import Path
 from platformdirs import user_data_dir
 from timeline.generate import generate
+from timeline.server import serve_async
 import argparse
 import logging
 
@@ -81,6 +82,10 @@ if __name__ == '__main__':
             'Use the --maps-key argument to set the API key.'
         )
 
+    server_thread = None
+    if args.port:
+        server_thread = serve_async(args.output_root, args.port)
+
     generate(
         args.paths_to_include,
         includerules=args.includerules,
@@ -89,3 +94,6 @@ if __name__ == '__main__':
         site_url=args.site_url,
         google_maps_api_key=args.google_maps_api_key,
     )
+
+    if server_thread:
+        server_thread.join()
