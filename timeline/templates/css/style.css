@@ -317,6 +317,10 @@ a{
     .entry .summary{
         grid-area: body;
     }
+    .entry.event:not(.expanded) .description{
+        height: calc(1em * var(--line-height-text) * 2);
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent 100%);
+    }
     .entry .description{
         grid-area: body;
         grid-row-start: 2;
