@@ -12,6 +12,8 @@ const initGMapsPromise = new Promise((resolve, reject) => {
 });
 
 export function initGoogleMaps() {
+  if (!config.googleMapsApiKey) return;
+
   if (googleMapsIsInitialised) return initGMapsPromise;
 
   googleMapsIsInitialised = true;

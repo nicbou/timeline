@@ -78,7 +78,7 @@ def generate_daily_entry_lists(cursor, output_path: Path):
                 'entries': [entry.to_json_dict() for entry in db.get_entries_for_date(cursor, day)],
             }, json_file)
 
-    logger.info(f"Generated {len(dates_with_entries)} entry lists")
+    logger.info(f"Generated entry lists for {len(dates_with_entries)} days")
 
 
 def generate_financial_report(cursor, output_path: Path):
@@ -98,8 +98,11 @@ def generate_financial_report(cursor, output_path: Path):
 
 
 def generate(input_paths, includerules, ignorerules, output_root: Path, site_url: str = '', google_maps_api_key: str = ''):
+    logging.info(f'Building timeline, saving it to {str(output_root)}')
+
     metadata_root = output_root / 'metadata'
     metadata_root.mkdir(parents=True, exist_ok=True)
+
     connection = db.get_connection(metadata_root / 'timeline.db')
     cursor = connection.cursor()
 
@@ -123,7 +126,7 @@ def generate(input_paths, includerules, ignorerules, output_root: Path, site_url
     with js_config_path.open() as config_file:
         config = (
             config_file.read()
-            .replace("${GOOGLE_MAPS_API_KEY}", google_maps_api_key)
+            .replace("${GOOGLE_MAPS_API_KEY}", google_maps_api_key or '')
             .replace("${SITE_URL}", site_url)
         )
     js_config_path.unlink()  # This is a hard link to the original. Remove it and create a copy of it.

@@ -1,27 +1,91 @@
 #!/usr/bin/env python
 from pathlib import Path
+from platformdirs import user_data_dir
 from timeline.generate import generate
 import argparse
 import logging
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        prog='timeline',
-        description='Timeline generator',
-        epilog='Made with ❤️ in Berlin'
-    )
-    args = parser.parse_args()
-
     logging.basicConfig(
         datefmt='%Y-%m-%d %H:%M:%S',
         format='[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s',
         level=logging.INFO,
     )
 
+    parser = argparse.ArgumentParser(
+        prog='timeline',
+        description='Timeline generator',
+        epilog='Made with ❤️ by Nicolas Bouliane'
+    )
+
+    parser.add_argument(
+        'paths_to_include', type=Path, nargs='+',
+        help="Include the files in the following paths on the timeline"
+    )
+
+    parser.add_argument(
+        '-i', '--include', type=Path, nargs='*', default=['*', ], dest='includerules',
+        help=(
+            "Only files that match these rules will be included. Unix-style wildcards are accepted. "
+            "For example: notes/*.md or photos/2023-10-??/*.jpg."
+        )
+    )
+    parser.add_argument(
+        '-x', '--exclude', type=Path, nargs='*', default=['.git/*', '.trashed*'], dest='ignorerules',
+        help=(
+            "Exclude files that match these rules. "
+            "Exclusion rules have higher priority than inclusion rules."
+            "Unix-style wildcards are accepted. "
+            "For example: .git/*.md or .trashed*"
+        )
+    )
+
+    parser.add_argument(
+        '-s', '--serve', dest='port', nargs='?', const=80, default=None,
+        help="Serve the timeline as a website on the given port. The default port is 80."
+    )
+
+    default_output_root = user_data_dir('nbouliane', 'timeline')
+    parser.add_argument(
+        '-o', '--output', type=Path, dest='output_root', default=default_output_root,
+        help=(
+            "Put the timeline metadata and static website files in this directory. "
+            f"The default for this computer is is {default_output_root}."
+        )
+    )
+    parser.add_argument(
+        '-u', '--url', type=str, default='', dest='site_url',
+        help=(
+            "The root URL of the website. For example, 'https://timeline.nicolasbouliane.com'. Empty by default."
+        )
+    )
+
+    parser.add_argument(
+        '--maps-key', type=str, dest='google_maps_api_key',
+        help=(
+            "Your Google Maps API key. Used to render the map. If the key is not set, the map will not be generated."
+        )
+    )
+
+    args = parser.parse_args()
+
+    for path in args.paths_to_include:
+        assert path.exists(), f"Input path does not exist: {str(path)}"
+
+    args.output_root.mkdir(parents=True, exist_ok=True)
+
+    if not args.google_maps_api_key:
+        logging.warning(
+            'No Google Maps API key set. No map will be displayed on the timeline. '
+            'Use the --maps-key argument to set the API key.'
+        )
+
     generate(
-        [Path('/Users/nicolas/Documents/Projects/AllAboutBerlin'), ],
-        includerules=['*',],
-        ignorerules=['.git/*', '.trashed*'],
-        output_root=Path('/Users/nicolas/Downloads/timeline/out'),
+        args.paths_to_include,
+        includerules=args.includerules,
+        ignorerules=args.ignorerules,
+        output_root=args.output_root,
+        site_url=args.site_url,
+        google_maps_api_key=args.google_maps_api_key,
     )
