@@ -2,8 +2,11 @@ import config from './google-map.js';
 
 export default Vue.component('entry-map', {
   props: ['entries',],
+  data() {
+    return { config: config };
+  },
   computed: {
-    markers: function() {
+    markers() {
       return this.entries.filter(e => e.data.location && e.data.location.latitude && e.data.location.longitude).map(e => {
         return {
           lat: e.data.location.latitude,
@@ -13,6 +16,6 @@ export default Vue.component('entry-map', {
     },
   },
   template: `
-    <google-map class="entry-map" :markers="markers" v-show="markers.length"></google-map>
+    <google-map v-if="config.googleMapsApiKey" class="entry-map" :markers="markers" v-show="markers.length"></google-map>
   `
 });
