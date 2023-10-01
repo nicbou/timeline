@@ -295,15 +295,42 @@ a{
 .entry.event{
     background: var(--c-widget);
     padding: var(--s);
-    overflow: hidden;
     display: grid;
-    grid-template-columns: 2em 3.5rem 1fr;
+    grid-template-columns: 2em 4rem 1fr;
     grid-template-areas: "icon time body";
     align-items: first baseline;
+    position: relative;
 }
+    .entry.event.starts-earlier:before, .entry.event.ends-later:after{
+        content: '';
+        display: block;
+        width: var(--xl);
+        height: 100%;
+        position: absolute;
+    }
+    .entry.event.starts-earlier{
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+        .entry.event.starts-earlier:before{
+            left: calc(var(--xl) * -1);
+            background: linear-gradient(90deg, transparent, var(--c-widget));
+        }
+    .entry.event.ends-later{
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+        .entry.event.ends-later:after{
+            right: calc(var(--xl) * -1);
+            background: linear-gradient(270deg, transparent, var(--c-widget));
+        }
+
     .entry > time{
         font-size: var(--m);
     }
+        .entry > time.all-day{
+            color: var(--c-text-light);
+        }
     .entry > i{
         grid-area: icon;
         font-size: var(--l);
@@ -318,7 +345,7 @@ a{
         grid-area: body;
     }
     .entry.event:not(.expanded) .description{
-        height: calc(1em * var(--line-height-text) * 2);
+        max-height: calc(1em * var(--line-height-text) * 2);
         mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent 100%);
     }
     .entry .description{
