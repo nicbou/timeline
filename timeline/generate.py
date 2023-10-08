@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from importlib.resources import path
 from pathlib import Path
-from timeline.file_processors.calendar import process_icalendar
+from timeline.file_processors.calendar import process_icalendar, process_calendar_db
 from timeline.file_processors.gpx import process_gpx
 from timeline.file_processors.image import process_image
 from timeline.file_processors.n26 import process_n26_transactions
@@ -48,6 +48,7 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
         process_n26_transactions,
         process_pdf,
         process_text,
+        process_calendar_db,
     ]
 
     new_file_count = 0
