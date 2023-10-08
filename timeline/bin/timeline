@@ -26,14 +26,14 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '-i', '--include', type=Path, nargs='*', default=['*', ], dest='includerules',
+        '-i', '--include', type=str, nargs='*', default=['*', ], dest='includerules',
         help=(
             "Only files that match these rules will be included. Unix-style wildcards are accepted. "
             "For example: notes/*.md or photos/2023-10-??/*.jpg."
         )
     )
     parser.add_argument(
-        '-x', '--exclude', type=Path, nargs='*', default=['.git/*', '.trashed*'], dest='ignorerules',
+        '-x', '--exclude', type=str, nargs='*', default=['.git/*', '.trashed*'], dest='ignorerules',
         help=(
             "Exclude files that match these rules. "
             "Exclusion rules have higher priority than inclusion rules."
@@ -87,7 +87,7 @@ if __name__ == '__main__':
         server_thread = serve_async(args.output_root, args.port)
 
     generate(
-        args.paths_to_include,
+        [p.resolve() for p in args.paths_to_include],
         includerules=args.includerules,
         ignorerules=args.ignorerules,
         output_root=args.output_root,
