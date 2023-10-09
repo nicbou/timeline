@@ -73,20 +73,20 @@ export default Vue.component('timeline-nav', {
   template: `
     <nav class="timeline-nav">
       <div class="controls back">
-        <router-link title="Alt + Shift + Left" :to="routerDateLink('years', -1)">Y</router-link>
-        <router-link title="Alt + Left" :to="routerDateLink('months', -1)">M</router-link>
-        <router-link title="Shift + Left" :to="routerDateLink('weeks', -1)">W</router-link>
-        <router-link title="Left arrow" :to="routerDateLink('days', -1)">D</router-link>
+        <router-link title="Next year — Alt + Shift + Left" :to="routerDateLink('years', -1)">Y</router-link>
+        <router-link title="Next month — Alt + Left" :to="routerDateLink('months', -1)">M</router-link>
+        <router-link title="Next week — Shift + Left" :to="routerDateLink('weeks', -1)">W</router-link>
+        <router-link title="Tomorrow — Left arrow" :to="routerDateLink('days', -1)">D</router-link>
       </div>
       <h1>
         <time>{{ timelineDate.format('LL') }}</time>
         <small>{{ timelineDate.format('dddd') }}, {{ relativeTimelineDate }}</small>
       </h1>
       <div class="controls forward">
-        <router-link title="Alt + Shift + Right" :disabled="!showTomorrow" :to="routerDateLink('days', 1)">D</router-link>
-        <router-link title="Alt + Right" :disabled="!showNextWeek" :to="routerDateLink('weeks', 1)">W</router-link>
-        <router-link title="Shift + Right" :disabled="!showNextMonth" :to="routerDateLink('months', 1)">M</router-link>
-        <router-link title="Right arrow" :disabled="!showNextYear" :to="routerDateLink('years', 1)">Y</router-link>
+        <router-link title="Last year — Alt + Shift + Right" :disabled="!showTomorrow" :to="routerDateLink('days', 1)">D</router-link>
+        <router-link title="Last month — Alt + Right" :disabled="!showNextWeek" :to="routerDateLink('weeks', 1)">W</router-link>
+        <router-link title="Last week — Shift + Right" :disabled="!showNextMonth" :to="routerDateLink('months', 1)">M</router-link>
+        <router-link title="Yesterday — Right arrow" :disabled="!showNextYear" :to="routerDateLink('years', 1)">Y</router-link>
       </div>
     </nav>
   `

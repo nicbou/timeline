@@ -170,8 +170,16 @@ a{
         .timeline-nav .forward{
             text-align: right;
         }
-        .timeline-nav .back a:before{content: '❮ '}
-        .timeline-nav .forward a:after{content: ' ❯'}
+        .timeline-nav .back:before{
+            content: '« ';
+            font-size: var(--xl);
+            line-height: var(--l);
+        }
+        .timeline-nav .forward:after{
+            content: ' »';
+            font-size: var(--xl);
+            line-height: calc(var(--m) * var(--line-height-label));
+        }
 
 .entry-map, .transactions, .entry{
     width: 100%;
