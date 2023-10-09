@@ -3,9 +3,9 @@ from pathlib import Path
 long_description = (Path(__file__).parent / "README.md").read_text()
 
 setup(
-    name='timeline',
+    name='timeline-ssg',
     version='0.0.1',
-    description='Timeline generator',
+    description='Generates a life timeline out of your personal files',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='http://github.com/nicbou/timeline',
