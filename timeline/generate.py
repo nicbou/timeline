@@ -8,6 +8,7 @@ from timeline.file_processors.image import process_image
 from timeline.file_processors.n26 import process_n26_transactions
 from timeline.file_processors.pdf import process_pdf
 from timeline.file_processors.text import process_text, process_markdown
+from timeline.file_processors.video import process_video, can_process_videos
 from timeline.filesystem import get_files_in_paths
 from timeline.models import TimelineFile, EntryType
 from timeline import templates
@@ -41,6 +42,7 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
     )
 
     timeline_file_processors = [
+        process_calendar_db,
         process_gpx,
         process_icalendar,
         process_image,
@@ -48,8 +50,14 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
         process_n26_transactions,
         process_pdf,
         process_text,
-        process_calendar_db,
     ]
+
+    if can_process_videos():
+        timeline_file_processors.append(process_video)
+    else:
+        logging.warning(
+            'ffmpeg is not installed. Videos will not be processed.'
+        )
 
     new_file_count = 0
     for file in db.get_unprocessed_timeline_files(cursor):

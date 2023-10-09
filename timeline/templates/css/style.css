@@ -247,21 +247,40 @@ a{
             display: block;
         }
 
-.entry.image{
+.entry.image, .entry.video{
     grid-column: auto / span 1;
     max-width: 100%;
     background: var(--c-page-inverted);
     height: var(--grid-h);
 }
-    .entry.image figure{
+    .entry.video figure:before{
+        content: '⏵';
+        position: absolute;
+        top: var(--s);
+        left: var(--s);
+        color: var(--c-text-inverted);
+        text-shadow: 0 1px 2px var(--c-text);
+        font-size: var(--xl-relative);
+        line-height: var(--xl-relative);
+        display: block;
+        aspect-ratio: 1 / 1;
+        width: var(--xl-relative);
+        text-align: center;
+        height: var(--xl-relative);
+    }
+        .entry.video:hover figure:before{
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+    .entry.image figure, .entry.video figure{
         position: relative;
         width: 100%;
         height: 100%;
     }
-        .entry.image figcaption{
+        .entry.image figcaption, .entry.video figcaption{
             display: none;
         }
-        .entry.image:hover figcaption{
+        .entry.image:hover figcaption, .entry.video:hover figcaption{
             display: block;
             position: absolute;
             box-sizing: border-box;
@@ -273,6 +292,15 @@ a{
             line-height: var(--line-height-label);
             font-size: var(--f-s);
         }
+        .entry.video video{
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;   
+        }
+            .entry.video:hover video{
+                object-fit: contain;
+            }
         .entry.image img{
             display: block;
             width: 100%;

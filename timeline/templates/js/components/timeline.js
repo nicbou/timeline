@@ -7,6 +7,7 @@ import TimelineEventEntry from './entries/event.js';
 import TimelineImageEntry from './entries/image.js';
 import TimelinePdfEntry from './entries/pdf.js';
 import TimelineTextEntry from './entries/text.js';
+import TimelineVideoEntry from './entries/video.js';
 import { RequestStatus } from './../models/requests.js';
 
 function makeRouteValid(to, from, next) {
