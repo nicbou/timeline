@@ -4,16 +4,13 @@ export default Vue.component('text-entry', {
   props: ['entry'],
   data() {
     return {
-      text: null
+      text: '',
     };
   },
   computed: {
     fileName: function() {
       const pathParts = this.entry.file_path.split('/');
       return pathParts[pathParts.length - 1];
-    },
-    paragraphs: function() {
-      return this.text.split('\n\n');
     },
   },
   async mounted(){
@@ -22,11 +19,9 @@ export default Vue.component('text-entry', {
   },
   template: `
     <article class="entry text">
-      <i class="icon fas fa-file-alt" :entry="entry"></i>
-      <div class="meta">{{ fileName }}</div>
-      <div class="content">
-        <p v-for="paragraph in paragraphs">{{ paragraph }}</p>
-      </div>
+      <main>
+        <pre>{{ text }}</pre>
+      </main>
     </article>
   `
 });
