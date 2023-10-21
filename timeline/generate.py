@@ -53,6 +53,8 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
         process_n26_transactions,
         process_pdf,
         process_text,
+        process_google_location_history,
+        process_google_browser_history,
     ]
 
     timeline_post_processors = [
