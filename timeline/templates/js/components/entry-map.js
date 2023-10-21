@@ -1,4 +1,5 @@
-import config from './google-map.js';
+import config from './../config.js';
+import GoogleMapComponent from './google-map.js';
 
 export default Vue.component('entry-map', {
   props: ['entries',],
