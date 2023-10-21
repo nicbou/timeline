@@ -1,6 +1,5 @@
 from pathlib import Path
 from timeline.models import TimelineEntry, TimelineFile, EntryType
-from typing import Iterable
 import gpxpy
 
 
@@ -21,21 +20,21 @@ def point_to_entry(file: TimelineFile, point) -> TimelineEntry:
     )
 
 
-def process_gpx(file: TimelineFile, entries: Iterable[TimelineEntry], metadata_root: Path) -> Iterable[TimelineEntry]:
-    if file.file_path.suffix.lower() == '.gpx':
-        with file.file_path.open() as gpx_file:
-            gpx_data = gpxpy.parse(gpx_file)
+def process_gpx(file: TimelineFile, metadata_root: Path):
+    if file.file_path.suffix.lower() != '.gpx':
+        return
 
-        for track in gpx_data.tracks:
-            for segment in track.segments:
-                for point in segment.points:
-                    entries.append(point_to_entry(file, point))
+    with file.file_path.open() as gpx_file:
+        gpx_data = gpxpy.parse(gpx_file)
 
-        for route in gpx_data.routes:
-            for point in route.points:
-                entries.append(point_to_entry(file, point))
+    for track in gpx_data.tracks:
+        for segment in track.segments:
+            for point in segment.points:
+                yield point_to_entry(file, point)
 
-        for point in gpx_data.waypoints:
-            entries.append(point_to_entry(file, point))
+    for route in gpx_data.routes:
+        for point in route.points:
+            yield point_to_entry(file, point)
 
-    return entries
+    for point in gpx_data.waypoints:
+        yield point_to_entry(file, point)

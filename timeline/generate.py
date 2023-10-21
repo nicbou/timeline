@@ -1,9 +1,11 @@
 from datetime import datetime
 from decimal import Decimal
 from importlib.resources import path
+from itertools import chain
 from pathlib import Path
 from timeline.file_processors.calendar import process_icalendar, process_calendar_db
 from timeline.post_processors.geo import add_reverse_geolocation
+from timeline.file_processors.google_takeout import process_google_browser_history, process_google_location_history
 from timeline.file_processors.gpx import process_gpx
 from timeline.file_processors.image import process_image
 from timeline.file_processors.n26 import process_n26_transactions
@@ -64,24 +66,23 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
             'ffmpeg is not installed. Videos will not be processed.'
         )
 
-    new_file_count = 0
-    for file in db.get_unprocessed_timeline_files(cursor):
-        new_file_count += 1
+    for file in (files := db.get_unprocessed_timeline_files(cursor)):
         logger.info(f"Processing {file.file_path}")
 
-        entries = []
-        for process_function in timeline_file_processors:
-            entries = process_function(file, entries, metadata_root)
+        # Chain all the file processors together
+        entry_generator = chain(*[
+            process_function(file, metadata_root) for process_function in timeline_file_processors
+        ])
 
-        for entry in entries:
-            for post_process_function in timeline_post_processors:
-                post_process_function(entry)
+        # Apply each post processor to the entries from entry_generator
+        for post_process_function in timeline_post_processors:
+            entry_generator = map(post_process_function, entry_generator)
 
         db.delete_timeline_entries(cursor, file.file_path)
-        db.add_timeline_entries(cursor, entries)
+        db.add_timeline_entries(cursor, entry_generator)
         db.mark_timeline_file_as_processed(cursor, file.file_path)
 
-    logger.info(f"Processed {new_file_count} new files")
+    logger.info(f"Processed {len(files)} new files")
 
 
 def generate_daily_entry_lists(cursor, output_path: Path):

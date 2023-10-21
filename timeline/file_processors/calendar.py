@@ -3,7 +3,6 @@ from icalendar import Calendar
 from pathlib import Path
 from timeline.database import get_connection, date_from_db
 from timeline.models import TimelineFile, TimelineEntry, EntryType
-from typing import Iterable
 
 
 def normalize_date(date_obj: date | datetime):
@@ -19,11 +18,11 @@ def normalize_date(date_obj: date | datetime):
     return date_obj.astimezone()
 
 
-def process_calendar_db(file: TimelineFile, entries: Iterable[TimelineEntry], metadata_root: Path) -> Iterable[TimelineEntry]:
+def process_calendar_db(file: TimelineFile, metadata_root: Path):
     # Calendar database used by Calendar on MacOS. Usual location: ~/Library/Calendars/Calendar.sqlitedb
 
     if file.file_path.suffix.lower() != '.sqlitedb':
-        return entries
+        return
 
     connection = get_connection(file.file_path)
     cursor = connection.cursor()
@@ -33,7 +32,7 @@ def process_calendar_db(file: TimelineFile, entries: Iterable[TimelineEntry], me
     ''')
 
     if len(cursor.fetchone()) == 0:
-        return entries
+        return
 
     # Mac calendar timestamps start on 2001-01-01 (unix 978307200)
     cursor.execute('''
@@ -80,21 +79,17 @@ def process_calendar_db(file: TimelineFile, entries: Iterable[TimelineEntry], me
                 event_groups[event_id]['data']['participants'] = [row[6], ]
 
     for event in event_groups.values():
-        entries.append(
-            TimelineEntry(
-                file_path=file.file_path,
-                checksum=file.checksum,
-                entry_type=EntryType.EVENT,
-                **event,
-            )
+        yield TimelineEntry(
+            file_path=file.file_path,
+            checksum=file.checksum,
+            entry_type=EntryType.EVENT,
+            **event,
         )
 
-    return entries
 
-
-def process_icalendar(file: TimelineFile, entries: Iterable[TimelineEntry], metadata_root: Path) -> Iterable[TimelineEntry]:
+def process_icalendar(file: TimelineFile, metadata_root: Path):
     if file.file_path.suffix.lower() not in (".ical", ".ics", ".ifb", ".icalendar"):
-        return entries
+        return
 
     with file.file_path.open() as ical_file:
         calendar = Calendar.from_ical(ical_file.read())
@@ -112,15 +107,11 @@ def process_icalendar(file: TimelineFile, entries: Iterable[TimelineEntry], meta
 
             date_end = normalize_date(event['DTEND'].dt) - timedelta(seconds=1) if event.get('DTEND') else None
 
-            entries.append(
-                TimelineEntry(
-                    file_path=file.file_path,
-                    checksum=file.checksum,
-                    entry_type=EntryType.EVENT,
-                    date_start=normalize_date(event['DTSTART'].dt),
-                    date_end=date_end,
-                    data=event_data
-                )
+            yield TimelineEntry(
+                file_path=file.file_path,
+                checksum=file.checksum,
+                entry_type=EntryType.EVENT,
+                date_start=normalize_date(event['DTSTART'].dt),
+                date_end=date_end,
+                data=event_data
             )
-
-    return entries

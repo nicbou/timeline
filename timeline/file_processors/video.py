@@ -2,7 +2,6 @@ from datetime import datetime
 from pathlib import Path
 from timeline.file_processors import dates_from_file
 from timeline.models import TimelineFile, TimelineEntry, EntryType
-from typing import Iterable
 import json
 import re
 import shutil
@@ -94,9 +93,9 @@ def make_preview(input_path: Path, output_path: Path, video_duration: int, max_w
         )
 
 
-def process_video(file: TimelineFile, entries: Iterable[TimelineEntry], metadata_root: Path) -> Iterable[TimelineEntry]:
+def process_video(file: TimelineFile, metadata_root: Path):
     if file.file_path.suffix.lower() not in video_extensions:
-        return entries
+        return
 
     ffprobe_cmd = subprocess.run(
         [
@@ -144,15 +143,11 @@ def process_video(file: TimelineFile, entries: Iterable[TimelineEntry], metadata
     if not output_path.exists():
         make_preview(file.file_path, output_path, entry_data['media']['duration'], 800, 600)
 
-    entries.append(
-        TimelineEntry(
-            file_path=file.file_path,
-            checksum=file.checksum,
-            entry_type=EntryType.VIDEO,
-            date_start=date_start,
-            date_end=date_end,
-            data=entry_data,
-        )
+    yield TimelineEntry(
+        file_path=file.file_path,
+        checksum=file.checksum,
+        entry_type=EntryType.VIDEO,
+        date_start=date_start,
+        date_end=date_end,
+        data=entry_data,
     )
-
-    return entries

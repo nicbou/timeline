@@ -150,33 +150,32 @@ def make_thumbnail(image_path: Path, output_path: Path, max_width: int, max_heig
         image.save(output_path, **save_args)
 
 
-def process_image(file: TimelineFile, entries: Iterable[TimelineEntry], metadata_root: Path) -> Iterable[TimelineEntry]:
-    if file.file_path.suffix.lower() in image_extensions:
-        try:
-            image_data = get_image_metadata(file.file_path)
-        except:
-            logger.exception(f"Could not process image metadata - {file.file_path}")
-            return entries
+def process_image(file: TimelineFile, metadata_root: Path):
+    if file.file_path.suffix.lower() not in image_extensions:
+        return
 
-        try:
-            date_start = image_data['media'].pop('creation_date')
-            date_end = None
-        except KeyError:
-            date_start, date_end = dates_from_file(file.file_path)
+    try:
+        image_data = get_image_metadata(file.file_path)
+    except:
+        logger.exception(f"Could not process image metadata - {file.file_path}")
+        return
 
-        output_path = metadata_root / file.checksum / 'thumbnail.webp'
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        if not output_path.exists():
-            make_thumbnail(file.file_path, output_path, 800, 600)
+    try:
+        date_start = image_data['media'].pop('creation_date')
+        date_end = None
+    except KeyError:
+        date_start, date_end = dates_from_file(file.file_path)
 
-        entries.append(
-            TimelineEntry(
-                file_path=file.file_path,
-                checksum=file.checksum,
-                entry_type=EntryType.IMAGE,
-                date_start=date_start,
-                date_end=date_end,
-                data=image_data,
-            )
-        )
-    return entries
+    output_path = metadata_root / file.checksum / 'thumbnail.webp'
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    if not output_path.exists():
+        make_thumbnail(file.file_path, output_path, 800, 600)
+
+    yield TimelineEntry(
+        file_path=file.file_path,
+        checksum=file.checksum,
+        entry_type=EntryType.IMAGE,
+        date_start=date_start,
+        date_end=date_end,
+        data=image_data,
+    )
