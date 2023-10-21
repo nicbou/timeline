@@ -68,7 +68,9 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
             'ffmpeg is not installed. Videos will not be processed.'
         )
 
-    for file in (files := db.get_unprocessed_timeline_files(cursor)):
+    new_file_count = 0
+    for file in db.get_unprocessed_timeline_files(cursor):
+        new_file_count += 1
         logger.info(f"Processing {file.file_path}")
 
         # Chain all the file processors together
@@ -84,7 +86,7 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
         db.add_timeline_entries(cursor, entry_generator)
         db.mark_timeline_file_as_processed(cursor, file.file_path)
 
-    logger.info(f"Processed {len(files)} new files")
+    logger.info(f"Processed {new_file_count} new files")
 
 
 def generate_daily_entry_lists(cursor, output_path: Path):
@@ -132,9 +134,6 @@ def generate(input_paths, includerules, ignorerules, output_root: Path, site_url
 
     templates_root = path(package=templates, resource="").__enter__()
 
-    generate_daily_entry_lists(cursor, output_root / 'entries')
-    generate_financial_report(cursor, output_root / 'entries' / 'finances.json')
-
     # Copy frontend code and assets
     for file in get_files_in_paths([templates_root, ]):
         output_file = output_root / file.relative_to(templates_root)
@@ -153,3 +152,6 @@ def generate(input_paths, includerules, ignorerules, output_root: Path, site_url
     js_config_path.unlink()  # This is a hard link to the original. Remove it and create a copy of it.
     with js_config_path.open('w') as config_file:
         config_file.write(config)
+
+    generate_daily_entry_lists(cursor, output_root / 'entries')
+    generate_financial_report(cursor, output_root / 'entries' / 'finances.json')
