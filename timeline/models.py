@@ -30,7 +30,7 @@ class EntryType(Enum):
     GEOLOCATION = 'geolocation'
 
 
-@dataclass(frozen=True)
+@dataclass
 class TimelineEntry:
     file_path: Path
     checksum: str

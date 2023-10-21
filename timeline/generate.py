@@ -3,6 +3,7 @@ from decimal import Decimal
 from importlib.resources import path
 from pathlib import Path
 from timeline.file_processors.calendar import process_icalendar, process_calendar_db
+from timeline.post_processors.geo import add_reverse_geolocation
 from timeline.file_processors.gpx import process_gpx
 from timeline.file_processors.image import process_image
 from timeline.file_processors.n26 import process_n26_transactions
@@ -52,6 +53,10 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
         process_text,
     ]
 
+    timeline_post_processors = [
+        add_reverse_geolocation,
+    ]
+
     if can_process_videos():
         timeline_file_processors.append(process_video)
     else:
@@ -67,6 +72,10 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
         entries = []
         for process_function in timeline_file_processors:
             entries = process_function(file, entries, metadata_root)
+
+        for entry in entries:
+            for post_process_function in timeline_post_processors:
+                post_process_function(entry)
 
         db.delete_timeline_entries(cursor, file.file_path)
         db.add_timeline_entries(cursor, entries)

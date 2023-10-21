@@ -24,6 +24,7 @@ setup(
         'Markdown==3.4.3',
         'Pillow==10.0.1',
         'platformdirs==3.10.0',
+        'reverse-geocode==1.4.1',
     ],
     zip_safe=False,
 )

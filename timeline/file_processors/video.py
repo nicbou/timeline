@@ -1,10 +1,10 @@
 from datetime import datetime
 from pathlib import Path
+from timeline.file_processors import dates_from_file
 from timeline.models import TimelineFile, TimelineEntry, EntryType
 from typing import Iterable
 import json
 import re
-import reverse_geocode
 import shutil
 import subprocess
 
@@ -114,8 +114,7 @@ def process_video(file: TimelineFile, entries: Iterable[TimelineEntry], metadata
     except KeyError:
         raise ValueError(f"Could not read metadata of {str(file.file_path)}")
 
-    date_start = None
-    date_end = None
+    date_start, date_end = dates_from_file(file.file_path)
     entry_data = {
         'media': {},
     }
@@ -137,9 +136,6 @@ def process_video(file: TimelineFile, entries: Iterable[TimelineEntry], metadata
             'latitude': lat,
             'longitude': lng,
         }
-        reverse_geolocation = reverse_geocode.search(((lat, lng),))[0]
-        entry_data['location']['city'] = reverse_geolocation['city']
-        entry_data['location']['country'] = reverse_geolocation['country']
 
     if ffprobe_data['format'].get('tags', {}).get('creation_time'):
         date_start = datetime.strptime(ffprobe_data['format']['tags']['creation_time'], '%Y-%m-%dT%H:%M:%S.%fZ')
