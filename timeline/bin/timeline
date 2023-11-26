@@ -47,7 +47,7 @@ if __name__ == '__main__':
         help="Serve the timeline as a website on the given port. The default port is 80."
     )
 
-    default_output_root = user_data_dir('nbouliane', 'timeline')
+    default_output_root = user_data_dir('timeline', 'nbouliane')
     parser.add_argument(
         '-o', '--output', type=Path, dest='output_root', default=default_output_root,
         help=(
