@@ -1,0 +1,18 @@
+version: '3.2'
+
+services:
+  proxy:
+    build:
+      context: ./proxy
+      args:
+        - "WEB_USERNAME"
+        - "WEB_PASSWORD"
+    environment:
+      - "SSL_DOMAIN"
+      - "SSL_EMAIL"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "${STATIC_SITE_PATH}:/var/www"
+    restart: unless-stopped

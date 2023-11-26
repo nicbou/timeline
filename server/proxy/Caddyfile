@@ -1,0 +1,11 @@
+{$SSL_DOMAIN:localhost} {
+  tls {$SSL_EMAIL:internal}
+
+  basicauth / {
+    import /etc/caddy/basicauth.conf
+  }
+
+  root * /var/www
+  file_server
+  encode gzip
+}
