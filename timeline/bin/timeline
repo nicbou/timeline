@@ -52,7 +52,7 @@ if __name__ == '__main__':
         '-o', '--output', type=Path, dest='output_root', default=default_output_root,
         help=(
             "Put the timeline metadata and static website files in this directory. "
-            f"The default for this computer is is {default_output_root}."
+            f"The default for this computer is {default_output_root}."
         )
     )
     parser.add_argument(
