@@ -12,9 +12,10 @@ def point_to_entry(file: TimelineFile, point) -> TimelineEntry:
         date_end=None,
         data={
             'location': {
-                'latitude': point.latitude,
-                'longitude': point.longitude,
-                'altitude': point.elevation,
+                # Adjust precision to 5 decimals, 1 metre
+                'latitude': float(point.latitude) * 10000 // 1 / 10000,
+                'longitude': float(point.longitude) * 10000 // 1 / 10000,
+                'altitude': float(point.elevation) * 10000 // 1 / 10000,
             },
         },
     )
