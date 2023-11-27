@@ -92,16 +92,27 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
 def generate_daily_entry_lists(cursor, output_path: Path):
     logger.info("Generating entry lists by day")
     # Generate entries .json for each day
+    # Only generate missing days or days that have changes to speed things up
     output_path.mkdir(parents=True, exist_ok=True)
-    dates_with_entries = db.dates_with_entries(cursor)
-    for day, date_processed in dates_with_entries.items():
-        day_json_path = output_path / f"{day.strftime('%Y-%m-%d')}.json"
-        with day_json_path.open('w') as json_file:
-            json.dump({
-                'entries': [entry.to_json_dict() for entry in db.get_entries_for_date(cursor, day)],
-            }, json_file)
 
-    logger.info(f"Generated entry lists for {len(dates_with_entries)} days")
+    days_to_update, days_to_delete = db.dates_with_changes(cursor)
+
+    days_updated = 0
+    for day, date_last_changed in days_to_update.items():
+        day_json_path = output_path / f"{day.strftime('%Y-%m-%d')}.json"
+
+        if not day_json_path.exists() or date_last_changed.timestamp() > day_json_path.stat().st_mtime:
+            days_updated += 1
+            with day_json_path.open('w') as json_file:
+                json.dump({
+                    'entries': [entry.to_json_dict() for entry in db.get_entries_for_date(cursor, day)],
+                }, json_file)
+
+    for day in days_to_delete:
+        day_json_path = output_path / f"{day.strftime('%Y-%m-%d')}.json"
+        day_json_path.unlink(missing_ok=True)
+
+    logger.info(f"Generated entry lists for {len(days_to_update)} days: updated {days_updated}, removed {len(days_to_delete)}")
 
 
 def generate_financial_report(cursor, output_path: Path):

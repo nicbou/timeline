@@ -1,7 +1,6 @@
-from timeline.database import create_timeline_files_table, add_found_files, clear_table, get_connection, \
+from timeline.database import create_database, add_found_files, clear_table, get_connection, \
     apply_cached_checksums_to_found_files, commit_found_files, fill_missing_found_file_checksums, \
-    create_timeline_entries_table, add_timeline_entries, create_found_files_table, dates_with_entries, \
-    get_entries_for_date, db_date
+    add_timeline_entries, dates_with_changes, get_entries_for_date, db_date
 from timeline.filesystem import get_checksum
 from timeline.models import TimelineEntry, TimelineFile, EntryType
 from datetime import date, datetime, timedelta
@@ -86,9 +85,7 @@ def assert_result_count(cursor, query, count):
 def cursor(tmp_path):
     connection = get_connection(tmp_path / 'database.db')
     cursor = connection.cursor()
-    create_found_files_table(connection)
-    create_timeline_files_table(connection)
-    create_timeline_entries_table(connection)
+    create_database(connection)
     yield cursor
     cursor.close()
     connection.close()
@@ -398,7 +395,7 @@ def test_add_timeline_entries_invalid_path(cursor, tmp_path):
         add_timeline_entries(cursor, timeline_entries)
 
 
-def test_dates_with_entries(cursor, tmp_path):
+def test_dates_with_changes(cursor, tmp_path):
     found_files = fake_found_files(tmp_path)
     timeline_entries = fake_timeline_entries(tmp_path)
     add_found_files(cursor, found_files)
@@ -425,7 +422,9 @@ def test_dates_with_entries(cursor, tmp_path):
         ]
     )
 
-    assert dates_with_entries(cursor) == {
+    days_to_update, days_to_delete = dates_with_changes(cursor)
+
+    assert days_to_update == {
         date(2023, 7, 1): file_a_date,
         date(2023, 7, 2): file_a_date,
         date(2023, 7, 3): file_a_date,
@@ -435,6 +434,67 @@ def test_dates_with_entries(cursor, tmp_path):
         date(2023, 7, 9): file_b_date,
         date(2023, 7, 10): file_b_date,
     }
+
+    assert days_to_delete == set()
+
+
+def test_dates_with_changes_deleted_entries(cursor, tmp_path):
+    found_files = list(fake_found_files(tmp_path))
+    timeline_entries = fake_timeline_entries(tmp_path)
+    add_found_files(cursor, found_files)
+    commit_found_files(cursor)
+    add_timeline_entries(cursor, timeline_entries)
+
+    file_a_date = datetime(2023, 9, 10, 11, 0, 0).astimezone()
+    file_b_date = datetime(2022, 6, 12, 9, 10, 0).astimezone()
+    cursor.executemany(
+        '''
+        UPDATE timeline_files
+        SET date_processed=?
+        WHERE file_path=?
+        ''',
+        [
+            [
+                db_date(file_a_date),
+                str(tmp_path / 'file_a.text'),
+            ],
+            [
+                db_date(file_b_date),
+                str(tmp_path / 'file_b.text'),
+            ]
+        ]
+    )
+
+    # Delete file B, update timeline
+    file_b = found_files.pop(1)
+    file_b.file_path.unlink()
+    add_found_files(cursor, found_files)
+    commit_found_files(cursor)
+
+    # Delete entries for file B
+    timeline_entries = [timeline_entries[0], ]
+    add_timeline_entries(cursor, timeline_entries)
+
+    days_to_update, days_to_delete = dates_with_changes(cursor)
+
+    # These days still have entries from file_a
+    assert days_to_update[date(2023, 7, 1)] == file_a_date
+    assert days_to_update[date(2023, 7, 2)] == file_a_date
+
+    # This day has an entry from file_a and a deleted entry from file_b
+    # The deletion date of file_b should be just a few milliseconds ago
+    assert datetime.timestamp(days_to_update[date(2023, 7, 3)]) == pytest.approx(datetime.timestamp(datetime.now()))
+
+    # This day has an entry from file_a
+    assert days_to_update[date(2023, 7, 4)] == file_a_date
+
+    # These days have deleted entries only, so they are marked for deletion
+    assert days_to_delete == set([
+        date(2023, 7, 7),
+        date(2023, 7, 8),
+        date(2023, 7, 9),
+        date(2023, 7, 10),
+    ])
 
 
 def test_get_entries_for_date(cursor, tmp_path):
