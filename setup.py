@@ -21,7 +21,7 @@ setup(
     install_requires=[
         'gpxpy==1.5.0',
         'icalendar==5.0.10',
-        'Markdown==3.4.3',
+        'Markdown==3.5',
         'Pillow==10.0.1',
         'platformdirs==3.10.0',
         'reverse-geocode==1.4.1',
