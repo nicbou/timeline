@@ -18,6 +18,7 @@ from timeline import templates
 from typing import Iterable
 import json
 import logging
+import shutil
 import timeline.database as db
 
 
@@ -150,7 +151,7 @@ def generate(input_paths, includerules, ignorerules, output_root: Path, site_url
         output_file = output_root / file.relative_to(templates_root)
         output_file.parent.mkdir(parents=True, exist_ok=True)
         output_file.unlink(missing_ok=True)
-        output_file.hardlink_to(file)
+        shutil.copy(file, output_file)
 
     # Generate .js config file
     js_config_path = output_root / 'js/config.js'
