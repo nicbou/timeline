@@ -24,6 +24,7 @@ setup(
         'Markdown==3.5',
         'Pillow==10.0.1',
         'platformdirs==3.10.0',
+        'PyMuPDF==1.21.1',
         'reverse-geocode==1.4.1',
     ],
     zip_safe=False,
