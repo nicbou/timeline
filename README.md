@@ -10,27 +10,38 @@ To install the latest released version, run `pip install timeline-ssg`.
 
 To install the latest development build, run `pip install -e /path/to/this/repository`.
 
+### Docker
+
+A `docker-compose.yml` file is supplied in the `/server` directory. You can use it to serve a fully functional, password-protected timeline.
+
+It requires the following environment variables:
+```
+WEB_USERNAME=alice
+WEB_PASSWORD=supersecret
+STATIC_SITE_PATH=/path/to/your/generated/timeline
+```
+
 ### Processing videos
 
 Timeline relies on ffmpeg to generate video previews. If ffmpeg is not installed, the timeline will work, but videos will not be included.
 
 To process videos, install `ffmpeg`. For example, you can run `apt install ffmpeg` or `brew install ffmpeg`.
 
-### Showing maps
-
-To show a map of your photos, videos and other entries with geolocation, you need a [Google Maps API key](https://developers.google.com/maps/documentation/javascript/get-api-key). If you don't supply an API key, the map will not be displayed.
-
-You can supply the Google Maps API key with the `--maps-key` command line argument.
-
 ## Usage
 
-Call `timeline --help` for usage instructions. The simplest command is `timeline /path/to/your/files /path/to/more/files`.
+To generate a timeline from a list of files, call `timeline /path/to/your/files`. It will be slow the first time, then much faster. Only new or modified files are processed.
 
-Timeline will generate a static website. You can choose the destination with the `-o` argument. The log will show where the website is saved.
+Timeline will generate a static website. You can choose the destination with the `-o` argument. The log show where the generated website is saved.
 
-It will be slow the first time, then much faster. Files are only processed once unless they change.
+To serve the website, you should use a static file server like Caddy or Nginx. Timeline can serve the website it generates (by calling `timeline -s`), but this is a test server. It's neither fast nor secure.
 
-To serve the website, you should use a static file server like Caddy or Nginx. Timeline comes with a web server (`timeline -s`), but it's neither fast nor secure.
+Call `timeline --help` for full usage instructions.
+
+### Showing maps
+
+To display a map of your photos, videos and other entries with geolocation on the timeline, you need a [Google Maps API key](https://developers.google.com/maps/documentation/javascript/get-api-key). If you don't supply an API key, the map will not be displayed.
+
+Use the `--maps-key` command line argument to supply an API key.
 
 ### Dating and locating files
 
