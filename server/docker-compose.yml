@@ -1,9 +1,9 @@
 version: '3.2'
 
 services:
-  proxy:
+  server:
     build:
-      context: ./proxy
+      context: ./server
       args:
         - "WEB_USERNAME"
         - "WEB_PASSWORD"

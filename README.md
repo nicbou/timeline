@@ -6,26 +6,40 @@ This project does the same thing as the [old timeline](https://github.com/nicbou
 
 ## Installation
 
+### 1. Install the timeline
+
 To install the latest released version, run `pip install timeline-ssg`.
 
 To install the latest development build, run `pip install -e /path/to/this/repository`.
 
-### Docker
+Once it's installed, run `timeline --help` to see how to generate a timeline.
 
-A `docker-compose.yml` file is supplied in the `/server` directory. You can use it to serve a fully functional, password-protected timeline.
+### 2. Install ffmpeg (optional)
 
-It requires the following environment variables:
+Timeline uses ffmpeg to generate thumbnails and previews for videos. You must install it separately. If you don't install it, video files will not appear on the timeline.
+
+For example, you can run `apt install ffmpeg` or `brew install ffmpeg`.
+
+### 3. Build your timeline
+
+Call `timeline /path/to/your/files -o /path/to/generated/timeline` to build a timeline. See [usage instructions](#usage) for more details.
+
+### 4. Serve your timeline
+
+The `timeline` command generates a static website. That website is your timeline. You must serve that website somehow.
+
+There are 3 ways to do this:
+
+- **Use the test server** (run `timeline -s`) to preview the timeline website. This server is not secure, and it's not meant for production.
+- **Use Caddy or nginx** to serve your timeline files. You can find an example Caddy config under `/server/server/Caddyfile`.
+- **Use Docker** with the supplied `docker-compose.yml` and `Dockerfile` in the `/server` folder.
+
+The docker image needs these environment variables:
 ```
 WEB_USERNAME=alice
 WEB_PASSWORD=supersecret
 STATIC_SITE_PATH=/path/to/your/generated/timeline
 ```
-
-### Processing videos
-
-Timeline relies on ffmpeg to generate video previews. If ffmpeg is not installed, the timeline will work, but videos will not be included.
-
-To process videos, install `ffmpeg`. For example, you can run `apt install ffmpeg` or `brew install ffmpeg`.
 
 ## Usage
 
