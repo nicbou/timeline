@@ -1,8 +1,10 @@
 # Timeline
 
-Point it at your files, and it generates a timeline of your life as a static website. See your photos, videos, calendar events, diary entries, geolocation history and bank transactions day by day. Scroll through your data the same way you scroll through your photos.
+Point it at your files, and it generates a timeline of your life. The timeline is a simple static website. See your photos, videos, calendar events, diary entries, geolocation history and bank transactions day by day. Scroll through your data the same way you scroll through your photos.
 
 This project does the same thing as the [old timeline](https://github.com/nicbou/timeline-old), but it's much simpler and lighter.
+
+**[Introduction to this project](https://nicolasbouliane.com/projects/new-timeline)**
 
 ## Installation
 
@@ -24,21 +26,25 @@ For example, you can run `apt install ffmpeg` or `brew install ffmpeg`.
 
 Call `timeline /path/to/your/files -o /path/to/generated/timeline` to build a timeline. See [usage instructions](#usage) for more details.
 
+The `timeline` command generates a static website. Use the `-o /timeline/output/path` argument to choose where to put the files. Look at the logs to see where the files go.
+
 ### 4. Serve your timeline
 
-The `timeline` command generates a static website. That website is your timeline. You must serve that website somehow.
+The `timeline` generates a website. You must serve that website somehow.
 
 There are 3 ways to do this:
 
-- **Use the test server** (run `timeline -s`) to preview the timeline website. This server is not secure, and it's not meant for production.
-- **Use Caddy or nginx** to serve your timeline files. You can find an example Caddy config under `/server/server/Caddyfile`.
-- **Use Docker** with the supplied `docker-compose.yml` and `Dockerfile` in the `/server` folder.
+- **Use the test server** (run `timeline -s` or `timeline -s 8080`) to preview the timeline website. This server is not secure, and it's not meant for production.
+- **Use Caddy or nginx** to serve your timeline files. You can find an example Caddy config in this repository (`server/server/Caddyfile`).
+- **Use Docker**. Find a `docker-compose.yml` and `Dockerfile` in this repository (in the `server` directory).
 
 The docker image needs these environment variables:
 ```
-WEB_USERNAME=alice
-WEB_PASSWORD=supersecret
-STATIC_SITE_PATH=/path/to/your/generated/timeline
+SSL_DOMAIN=timeline.johndoe.com
+SSL_EMAIL=contact@johndoe.com
+WEB_USERNAME=jdoe
+WEB_PASSWORD=hunter2
+STATIC_SITE_PATH=/timeline/output/path
 ```
 
 ## Usage
