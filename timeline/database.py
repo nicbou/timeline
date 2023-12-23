@@ -269,6 +269,7 @@ def update_file_database(cursor, timeline_files: Iterable[TimelineFile]):
     Syncs the list of files in the database with the actual list of files on the
     filesystem. The result is an up-to-date timeline_files table.
     """
+    clear_table(cursor, 'found_files')
     add_found_files(cursor, timeline_files)
     apply_cached_checksums_to_found_files(cursor)
     fill_missing_found_file_checksums(cursor)
