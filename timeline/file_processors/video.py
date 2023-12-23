@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 from timeline.file_processors import dates_from_file
 from timeline.models import TimelineFile, TimelineEntry, EntryType
@@ -13,7 +14,7 @@ video_extensions = set([
     '.rm', '.asf', '.amv', '.mp4', '.m4p', '.m4v', '.mpg', '.mp2', '.mpeg', '.mpe', '.mpv', '.m4v', '.svi', '.3gp',
     '.3g2', '.mxf', '.roq', '.nsv', '.flv', '.f4v', '.f4p', '.f4a', '.f4b', '.mod'
 ])
-video_geolocation_regex = re.compile(r"^(?P<lat>[+-]\d+\.\d+)(?P<lng>[+-]\d+\.\d+)/.*$")
+video_geolocation_regex = re.compile(r"^(?P<lat>[+-]\d+\.\d+)(?P<lng>[+-]\d+\.\d+)(?P<alt>[+-]\d+\.\d+)?/.*$")
 
 
 def can_process_videos():
@@ -22,7 +23,12 @@ def can_process_videos():
 
 def parse_video_geolocation(value: str):
     if match := video_geolocation_regex.match(value):
-        return match['lat'].lstrip('+'), match['lng'].lstrip('+')
+        raw_alt = match.groupdict().get('alt', '')
+        return (
+            str(Decimal(match['lat'])),
+            str(Decimal(match['lng'])),
+            str(Decimal(raw_alt)) if raw_alt else None
+        )
 
 
 def make_preview(input_path: Path, output_path: Path, video_duration: int, max_width: int, max_height: int):
@@ -130,11 +136,13 @@ def process_video(file: TimelineFile, metadata_root: Path):
     entry_data['media']['duration'] = int(float(ffprobe_data['format']['duration']))
 
     if ffprobe_data['format'].get('tags', {}).get('location'):
-        lat, lng = parse_video_geolocation(ffprobe_data['format']['tags']['location'])
+        lat, lng, alt = parse_video_geolocation(ffprobe_data['format']['tags']['location'])
         entry_data['location'] = {
             'latitude': lat,
             'longitude': lng,
         }
+        if alt:
+            entry_data['location']['altitude'] = alt
 
     if ffprobe_data['format'].get('tags', {}).get('creation_time'):
         date_start = datetime.strptime(ffprobe_data['format']['tags']['creation_time'], '%Y-%m-%dT%H:%M:%S.%fZ')
