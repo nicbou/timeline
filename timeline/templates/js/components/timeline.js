@@ -72,6 +72,7 @@ export default Vue.component('timeline', {
       <component
         :entry="entry"
         :is="componentType(entry.entry_type)"
+        :key="entry.file_path"
         v-for="entry in entries"
         v-if="componentType(entry.entry_type)"></component>
     </main>
