@@ -43,7 +43,7 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '-s', '--serve', dest='port', nargs='?', const=80, default=None,
+        '-s', '--serve', type=int, dest='port', nargs='?', const=80, default=None,
         help="Serve the timeline as a website on the given port. The default port is 80."
     )
 
