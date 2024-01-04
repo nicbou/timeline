@@ -8,6 +8,7 @@ from timeline.post_processors.geo import add_reverse_geolocation
 from timeline.file_processors.google_takeout import process_google_browser_history, process_google_location_history
 from timeline.file_processors.gpx import process_gpx
 from timeline.file_processors.image import process_image
+from timeline.file_processors.kontist import process_kontist_transactions
 from timeline.file_processors.n26 import process_n26_transactions
 from timeline.file_processors.pdf import process_pdf
 from timeline.file_processors.text import process_text, process_markdown
@@ -50,6 +51,7 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
         process_gpx,
         process_icalendar,
         process_image,
+        process_kontist_transactions,
         process_markdown,
         process_n26_transactions,
         process_pdf,

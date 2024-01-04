@@ -25,6 +25,9 @@ export default Vue.component('transactions', {
     },
   },
   methods: {
+    entryIcon(entry) {
+      return `/images/${entry.data.account.toLowerCase()}.png`;
+    },
     roundCurrency(num, roundDown=false) {
       if(roundDown) {
         return Math.floor(num * 100) / 100;
@@ -90,7 +93,7 @@ export default Vue.component('transactions', {
         <strong class="total-amount">+{{ formatCurrency(totals.income) }}</strong>
         <ul v-if="entries.length && showTransactions" class="income">
           <li v-for="entry in incomeEntries">
-            <img src="/images/n26.png">
+            <img :src="entryIcon(entry)">
             <div class="details">
               <span class="other-party">{{ entry.data.otherParty }}</span>
               <small v-if="entry.data.description" class="description">{{ entry.data.description }}</small>
@@ -104,7 +107,7 @@ export default Vue.component('transactions', {
         <strong class="total-amount">{{ formatCurrency(totals.expenses) }}</strong>
         <ul v-if="entries.length && showTransactions" class="expenses">
           <li v-for="entry in expenseEntries">
-            <img src="/images/n26.png">
+            <img :src="entryIcon(entry)">
             <div class="details">
               <span class="other-party">{{ entry.data.otherParty }}</span>
               <small v-if="entry.data.description" class="description">{{ entry.data.description }}</small>
