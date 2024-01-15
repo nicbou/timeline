@@ -49,6 +49,9 @@ export default {
         const entriesRequestPromise = fetch(`${config.domain}/entries/${date}.json`)
           .then(response => response.ok ? response.json() : Promise.reject(response))
           .then(json => {
+            json.entries.forEach((entry, index) => {
+              entry.key = `${date}-${index}`;
+            })
             context.commit('SET_ENTRIES', json.entries);
             context.commit('ENTRIES_REQUEST_SUCCESS');
             return context.state.entries;
