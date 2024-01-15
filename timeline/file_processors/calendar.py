@@ -1,8 +1,9 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from icalendar import Calendar
 from pathlib import Path
-from timeline.database import get_connection, date_from_db
+from timeline.database import get_connection
 from timeline.models import TimelineFile, TimelineEntry, EntryType
+import pytz
 
 
 def normalize_date(date_obj: date | datetime):
@@ -16,6 +17,16 @@ def normalize_date(date_obj: date | datetime):
             second=0
         ).astimezone()
     return date_obj.astimezone()
+
+
+def date_from_db(date: datetime, timezone_string: str):
+    if timezone_string == '_float':
+        # Floating timezone
+        local_tz = datetime.now().astimezone().tzinfo
+        return date.replace(tzinfo=local_tz)
+
+    # Specified timezone
+    return date.replace(tzinfo=timezone.utc).astimezone(pytz.timezone(timezone_string))
 
 
 def process_calendar_db(file: TimelineFile, metadata_root: Path):
@@ -43,7 +54,9 @@ def process_calendar_db(file: TimelineFile, metadata_root: Path):
             DATETIME(start_date + 978307200, 'unixepoch') as "[timestamp]",
             DATETIME(end_date + 978307200, 'unixepoch') as "[timestamp]",
             Location.title,
-            Participant.email
+            Participant.email,
+            start_tz,
+            end_tz
         FROM CalendarItem
         LEFT JOIN Location ON Location.ROWID = CalendarItem.location_id
         LEFT JOIN Participant ON Participant.owner_id = CalendarItem.ROWID
@@ -63,8 +76,8 @@ def process_calendar_db(file: TimelineFile, metadata_root: Path):
                 event_groups[event_id]['data']['participants'].append(row[6])
         else:
             event_groups[event_id] = {
-                'date_start': date_from_db(row[3]),
-                'date_end': date_from_db(row[4]) - timedelta(seconds=1),
+                'date_start': date_from_db(row[3], row[7]),
+                'date_end': date_from_db(row[4], row[8]),
                 'data': {},
             }
             if row[1]:
