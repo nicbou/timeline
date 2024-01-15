@@ -145,8 +145,14 @@ a{
     grid-template-columns: repeat(auto-fit, var(--grid-w));
     grid-auto-flow: dense;
     gap: var(--grid-gap);
-    margin:var(--xl) auto;
+    margin:var(--xl) var(--grid-gap);
     justify-content: center;
+}
+
+@media screen and (max-width: 48rem) {
+    #layout{
+        grid-template-columns: 1fr;
+    }
 }
 
 .timeline-nav{
