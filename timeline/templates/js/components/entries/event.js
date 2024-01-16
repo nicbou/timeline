@@ -15,7 +15,7 @@ export default Vue.component('event-entry', {
       return (
         this.dateStart <= this.currentDate.startOf('day')
         && this.dateEnd
-        && this.dateEnd >= this.currentDate.endOf('day').milliseconds(0)
+        && this.dateEnd >= this.currentDate.endOf('day').seconds(0).milliseconds(0)
       );
     },
     startsEarlier() {
