@@ -4,6 +4,14 @@ import gpxpy
 
 
 def point_to_entry(file: TimelineFile, point) -> TimelineEntry:
+    location_info = {
+        # Adjust precision to 5 decimals, 1 metre
+        'latitude': float(point.latitude) * 10000 // 1 / 10000,
+        'longitude': float(point.longitude) * 10000 // 1 / 10000,
+    }
+    if point.elevation:
+        location_info['altitude'] = float(point.elevation) * 10000 // 1 / 10000
+
     return TimelineEntry(
         file_path=file.file_path,
         checksum=file.checksum,
@@ -11,12 +19,7 @@ def point_to_entry(file: TimelineFile, point) -> TimelineEntry:
         date_start=point.time,
         date_end=None,
         data={
-            'location': {
-                # Adjust precision to 5 decimals, 1 metre
-                'latitude': float(point.latitude) * 10000 // 1 / 10000,
-                'longitude': float(point.longitude) * 10000 // 1 / 10000,
-                'altitude': float(point.elevation) * 10000 // 1 / 10000,
-            },
+            'location': location_info,
         },
     )
 
