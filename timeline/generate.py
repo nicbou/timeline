@@ -11,6 +11,7 @@ from timeline.file_processors.image import process_image
 from timeline.file_processors.kontist import process_kontist_transactions
 from timeline.file_processors.n26 import process_n26_transactions
 from timeline.file_processors.pdf import process_pdf
+from timeline.file_processors.search import process_search_logs
 from timeline.file_processors.text import process_text, process_markdown
 from timeline.file_processors.video import process_video, can_process_videos
 from timeline.filesystem import get_files_in_paths
@@ -55,6 +56,7 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
         process_markdown,
         process_n26_transactions,
         process_pdf,
+        process_search_logs,
         process_text,
         process_google_location_history,
         process_google_browser_history,

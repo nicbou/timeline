@@ -116,3 +116,4 @@ Some file extensions hint at files that have a special purpose on the timeline.
 
 - `.journal.md` marks a Markdown file as a journal entry. Those are displayed more prominently on the timeline.
 - `.n26.csv` marks a CSV file as an N26 bank transaction export. Each line will be added to the timeline as a bank transaction.
+- `.searches.csv` marks a CSV file as a log of internet searches. It has 3 columns: `date` (an ISO-8601 date), `query` (the search query) and `url` (the optional URL of the search results)
