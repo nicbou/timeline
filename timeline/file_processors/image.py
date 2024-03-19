@@ -5,7 +5,6 @@ from PIL.ImageOps import exif_transpose
 from PIL.ExifTags import TAGS, GPSTAGS
 from timeline.file_processors import dates_from_file
 from timeline.models import TimelineFile, TimelineEntry, EntryType
-from typing import Iterable
 import logging
 import math
 

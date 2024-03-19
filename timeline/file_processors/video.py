@@ -4,9 +4,13 @@ from pathlib import Path
 from timeline.file_processors import dates_from_file
 from timeline.models import TimelineFile, TimelineEntry, EntryType
 import json
+import logging
 import re
 import shutil
 import subprocess
+
+
+logger = logging.getLogger(__name__)
 
 
 video_extensions = set([
@@ -149,7 +153,11 @@ def process_video(file: TimelineFile, metadata_root: Path):
 
     output_path = metadata_root / file.checksum / 'thumbnail.webm'
     if not output_path.exists():
-        make_preview(file.file_path, output_path, entry_data['media']['duration'], 800, 600)
+        try:
+            make_preview(file.file_path, output_path, entry_data['media']['duration'], 800, 600)
+        except:
+            logger.exception(f"Could not process video - {file.file_path}")
+            return
 
     yield TimelineEntry(
         file_path=file.file_path,
