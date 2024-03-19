@@ -330,9 +330,23 @@ a{
     font-family: var(--f-text);
     font-size: var(--xl);
 }
-    .entry.diary p{
-        margin: var(--m) 0;
+    .entry.diary main{
+        margin: var(--xl) 0;
     }
+        .entry.diary main :first-child{
+            margin-top:0;
+        }
+        .entry.diary main :last-child{
+            margin-bottom:0;
+        }
+        .entry.diary p{
+            margin: var(--m) 0;
+        }
+        .entry.diary hr{
+            margin: var(--xl) 0;
+            border: none;
+            border-top: var(--b-light);
+        }
 
 .entry.event{
     background: var(--c-widget);
