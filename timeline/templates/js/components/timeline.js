@@ -67,14 +67,14 @@ export default Vue.component('timeline', {
     <main id="layout">
       <timeline-nav id="timeline-nav"></timeline-nav>
       <spinner v-if="isLoading"></spinner>
-      <entry-map :entries="entries"></entry-map>
-      <transactions :entries="transactions" :finances="finances" :current-date="timelineDate"></transactions>
+      <entry-map v-show="!isLoading" :entries="entries"></entry-map>
       <component
         :entry="entry"
         :is="componentType(entry.entry_type)"
         :key="entry.key"
         v-for="entry in entries"
-        v-if="componentType(entry.entry_type)"></component>
+        v-if="!isLoading && componentType(entry.entry_type)"></component>
+      <transactions v-show="!isLoading" :entries="transactions" :finances="finances" :current-date="timelineDate"></transactions>
     </main>
   `
 });
