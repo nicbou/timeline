@@ -1,6 +1,6 @@
 from pathlib import Path
 from timeline.models import TimelineFile, TimelineEntry, EntryType
-from datetime import datetime, timezone
+from datetime import datetime
 import codecs
 import csv
 
@@ -10,7 +10,7 @@ def process_search_logs(file: TimelineFile, metadata_root: Path):
         return
 
     for line in csv.DictReader(codecs.iterdecode(file.file_path.open('rb'), 'utf-8'), delimiter=',', quotechar='"'):
-        search_date = datetime.strptime(line['date'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc).astimezone()
+        search_date = datetime.fromisoformat(line['date']).astimezone()
         yield TimelineEntry(
             file_path=file.file_path,
             checksum=file.checksum,
