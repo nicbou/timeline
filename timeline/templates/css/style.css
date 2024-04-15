@@ -141,11 +141,11 @@ a{
 
 #layout{
     display: grid;
-    max-width: calc(var(--grid-w) * 4 + var(--grid-gap) * 3);
-    grid-template-columns: repeat(auto-fit, var(--grid-w));
+    max-width: calc(var(--grid-w) * 2 + var(--grid-gap));
+    grid-template-columns: 1fr 1fr;
     grid-auto-flow: dense;
     gap: var(--grid-gap);
-    margin:var(--xl) var(--grid-gap);
+    margin:var(--xl) auto;
     justify-content: center;
 }
 
