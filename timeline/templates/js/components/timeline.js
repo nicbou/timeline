@@ -1,12 +1,12 @@
 import SpinnerComponent from './spinner.js';
 import TimelineMap from './entry-map.js';
-import TransactionsList from './transactions.js';
 import TimelineNav from './timeline-nav.js';
 import TimelineDiaryEntry from './entries/diary.js';
 import TimelineEventEntry from './entries/event.js';
 import TimelineImageEntry from './entries/image.js';
 import TimelinePdfEntry from './entries/pdf.js';
 import TimelineTextEntry from './entries/text.js';
+import TimelineTransactionEntry from './entries/transaction.js';
 import TimelineVideoEntry from './entries/video.js';
 import { RequestStatus } from './../models/requests.js';
 
@@ -74,7 +74,6 @@ export default Vue.component('timeline', {
         :key="entry.key"
         v-for="entry in entries"
         v-if="!isLoading && componentType(entry.entry_type)"></component>
-      <transactions v-show="!isLoading" :entries="transactions" :finances="finances" :current-date="timelineDate"></transactions>
     </main>
   `
 });
