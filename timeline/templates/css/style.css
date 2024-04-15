@@ -161,20 +161,29 @@ a{
     margin: 0 auto;
     grid-column: 1 / -1;
     display: grid;
-    grid-template: auto 1fr auto;
     grid-template-areas: "back date forward";
     align-items: center;
     text-align: center;
 }
+    .timeline-nav h1{
+        grid-area: date;
+    }
     .timeline-nav .back, .timeline-nav .forward{
         display: flex;
         justify-content: space-evenly;
+        gap: var(--s);
     }
+        .timeline-nav .controls a{
+            flex:1 0 auto;
+            text-align: center;
+        }
         .timeline-nav .back{
             text-align: left;
+            grid-area: back;
         }
         .timeline-nav .forward{
             text-align: right;
+            grid-area: forward;
         }
         .timeline-nav .back:before{
             content: '« ';
@@ -187,7 +196,18 @@ a{
             line-height: calc(var(--m) * var(--line-height-label));
         }
 
-.entry-map, .transactions, .entry{
+    @media screen and (max-width: 48rem) {
+        .timeline-nav{
+            grid-template-areas: "date date" "back forward";
+            gap:var(--m);
+            margin-bottom: var(--m);
+        }
+            .timeline-nav h1{
+                margin: 0;
+            }
+    }
+
+.entry-map, .entry{
     width: 100%;
     max-width: var(--grid-w2);
     margin: 0 auto;
@@ -198,68 +218,13 @@ a{
     box-sizing: border-box;
     border-radius: var(--b-radius);
 }
+.entry{
+    word-break: break-word;
+}
 
 .entry-map{
     height: var(--grid-h);
 }
-
-.transactions{
-    display: grid;
-    background: var(--c-widget);
-    grid-template-columns: 1fr 1fr;
-    grid-auto-flow: dense;
-    gap: var(--grid-gap);
-    padding: var(--s);
-}
-    .transactions svg{
-        grid-column: 1 / -1;
-        border-bottom: var(--b-light);
-    }
-        .transactions svg path{
-            stroke: var(--c-text-link);
-            stroke-width: 2px;
-        }
-        .transactions svg line{
-            stroke: var(--c-border-light);
-        }
-    .transactions h3{
-        font-size: var(--m);
-        margin: 0;
-    }
-    .transactions .total-amount{
-        font-size: var(--l);
-        line-height: var(--line-height-label);
-    }
-        .expenses .total-amount{
-            color: var(--c-text-error);
-        }
-
-    .transactions li{
-        list-style: none;
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        gap: var(--grid-gap);
-        margin: var(--s) 0;
-        padding-top: var(--s);
-        border-top: var(--b-light);
-        align-items: center;
-    }
-        .transactions li img{
-            width: 32px;
-            border-radius: 50%;
-        }
-        .transactions li .amount{
-            min-width: 5em;
-            text-align: right;
-        }
-            .expenses li .amount{
-                color: var(--c-text-error);
-            }
-        .transactions li .description{
-            font-size: var(--f-s);
-            color: var(--c-text-light);
-            display: block;
-        }
 
 .entry.image, .entry.video{
     grid-column: auto / span 1;
@@ -347,6 +312,9 @@ a{
             margin: var(--xl) 0;
             border: none;
             border-top: var(--b-light);
+        }
+        .entry.diary ul, .entry.diary ol{
+            list-style: inside;
         }
     .entry.diary + .entry.diary{
         border-top: var(--b-light);

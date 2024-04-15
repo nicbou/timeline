@@ -45,9 +45,6 @@ export default Vue.component('timeline', {
     finances() {
       return this.$store.state.timeline.finances;
     },
-    transactions() {
-      return this.entries.filter(e => e.entry_type === 'transaction');
-    },
     isLoading() {
       return this.$store.state.timeline.entriesRequestStatus === RequestStatus.PENDING;
     },
