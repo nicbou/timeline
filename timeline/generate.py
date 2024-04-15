@@ -136,7 +136,7 @@ def generate_financial_report(cursor, output_path: Path):
         json.dump(transaction_amount_by_day, json_file)
 
 
-def generate(input_paths, includerules, ignorerules, output_root: Path, site_url: str = '', google_maps_api_key: str = ''):
+def generate(input_paths, includerules, ignorerules, output_root: Path, site_url: str = '', google_maps_api_key: str = '', live_templates: bool = False):
     logging.info(f'Building timeline, saving it to {str(output_root)}')
 
     metadata_root = output_root / 'metadata'
@@ -155,7 +155,10 @@ def generate(input_paths, includerules, ignorerules, output_root: Path, site_url
         output_file = output_root / file.relative_to(templates_root)
         output_file.parent.mkdir(parents=True, exist_ok=True)
         output_file.unlink(missing_ok=True)
-        shutil.copy(file, output_file)
+        if live_templates:
+            output_file.symlink_to(file)
+        else:
+            shutil.copy(file, output_file)
 
     # Generate .js config file
     js_config_path = output_root / 'js/config.js'

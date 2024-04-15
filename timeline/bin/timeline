@@ -69,6 +69,11 @@ if __name__ == '__main__':
         )
     )
 
+    parser.add_argument(
+        '--live-templates', action='store_true', dest='live_templates',
+        help='Use symlinks to serve the latest frontend files. See template changes without rebuilding the timeline.'
+    )
+
     args = parser.parse_args()
 
     for path in args.paths_to_include:
@@ -93,6 +98,7 @@ if __name__ == '__main__':
         output_root=args.output_root,
         site_url=args.site_url,
         google_maps_api_key=args.google_maps_api_key,
+        live_templates=args.live_templates,
     )
 
     if server_thread:
