@@ -360,7 +360,7 @@ a{
     .entry.event.starts-earlier:before, .entry.event.ends-later:after{
         content: '';
         display: block;
-        width: var(--xl);
+        width: var(--grid-gap);
         height: 100%;
         position: absolute;
     }
@@ -369,7 +369,7 @@ a{
         border-bottom-left-radius: 0;
     }
         .entry.event.starts-earlier:before{
-            left: calc(var(--xl) * -1);
+            left: calc(var(--grid-gap) * -1);
             background: linear-gradient(90deg, transparent, var(--c-widget));
         }
     .entry.event.ends-later{
@@ -377,7 +377,7 @@ a{
         border-bottom-right-radius: 0;
     }
         .entry.event.ends-later:after{
-            right: calc(var(--xl) * -1);
+            right: calc(var(--grid-gap) * -1);
             background: linear-gradient(270deg, transparent, var(--c-widget));
         }
 
