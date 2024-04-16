@@ -13,7 +13,7 @@ export default Vue.component('diary-entry', {
     this.html = await req.text();
   },
   template: `
-    <article class="entry diary" @click="expanded = !expanded" :class="{'expanded': expanded}">
+    <article v-if="html" class="entry diary" @click="expanded = !expanded" :class="{'expanded': expanded}">
       <main v-html="html"></main>
     </article>
   `
