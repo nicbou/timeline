@@ -217,6 +217,7 @@ a{
     width: 100%;
     box-sizing: border-box;
     border-radius: var(--b-radius);
+    overflow: hidden;
 }
 .entry{
     word-break: break-word;
