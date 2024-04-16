@@ -2,7 +2,9 @@
 
 Point it at your files, and it generates a timeline of your life. The timeline is a simple static website. See your photos, videos, calendar events, diary entries, geolocation history and bank transactions day by day. Scroll through your data the same way you scroll through your photos.
 
-This project does the same thing as the [old timeline](https://github.com/nicbou/timeline-old), but it's much simpler and lighter.
+![Screenshot of the timeline](https://nicolasbouliane.com/images/timeline-1.png)
+
+This project does the same thing as the [old timeline](https://github.com/nicbou/timeline-old), but it's simpler, lighter and easier to run. It's meant to be used by other humans.
 
 **[Introduction to this project](https://nicolasbouliane.com/projects/new-timeline)**
 
