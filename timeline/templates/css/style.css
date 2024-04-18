@@ -330,7 +330,7 @@ a{
     grid-template-areas: "icon body time";
     align-items: center;
     position: relative;
-    gap: var(--m);
+    gap: var(--xs) var(--m);
 }
     .entry.event.starts-earlier:before, .entry.event.ends-later:after{
         content: '';
@@ -374,6 +374,11 @@ a{
         font-size: var(--m);
         line-height: var(--line-height-heading);
     }
+        .entry.event .summary .location{
+            font-size: var(--f-s);
+            margin-top: var(--xs);
+            display: block;
+        }
     .entry.event:not(.expanded) .description{
         max-height: calc(1em * var(--line-height-text) * 2);
         mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent 100%);

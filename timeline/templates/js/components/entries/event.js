@@ -36,6 +36,9 @@ export default Vue.component('event-entry', {
     },
     description() {
       return (this.entry.data.description || '').trim().replaceAll('<br><br>', '<br>').replaceAll('\n', '<br>');
+    },
+    location() {
+      return this.entry.data.location && this.entry.data.location.name;
     }
   },
   template: `
@@ -44,7 +47,10 @@ export default Vue.component('event-entry', {
       <time v-if="!isAllDay && !startsEarlier">{{ dateStart.format('H:mm') }}</time>
       <time v-if="!isAllDay && startsEarlier">&hellip;{{ dateEndPrint.format('H:mm') }}</time>
       <time class="all-day" v-if="isAllDay">All day</time>
-      <div class="summary">{{ entry.data.summary.replaceAll('\\n', ', ') }}</div>
+      <div class="summary">
+        {{ entry.data.summary.replaceAll('\\n', ', ') }}
+        <span class="location" v-if="location">{{ location }}</span>
+      </div>
       <div class="description" v-if="description" v-html="description"></div>
     </article>
   `
