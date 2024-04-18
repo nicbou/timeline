@@ -444,6 +444,7 @@ a{
     position: relative;
     gap: var(--m);
     color: var(--c-text);
+    font-size: var(--m);
 }
     .entry.search:hover{
         color: var(--c-text-link);
