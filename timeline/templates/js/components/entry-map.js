@@ -17,6 +17,6 @@ export default Vue.component('entry-map', {
     },
   },
   template: `
-    <google-map v-if="config.googleMapsApiKey" class="entry-map" :markers="markers" v-show="markers.length"></google-map>
+    <google-map v-if="config.googleMapsApiKey && markers" class="entry-map" :markers="markers" v-show="markers.length"></google-map>
   `
 });
