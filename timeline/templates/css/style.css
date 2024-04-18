@@ -145,7 +145,8 @@ a{
     grid-template-columns: 1fr 1fr;
     grid-auto-flow: dense;
     gap: var(--grid-gap);
-    margin:var(--xl) auto;
+    margin:0 auto;
+    padding: 0 var(--m);
     justify-content: center;
 }
 
