@@ -3,6 +3,7 @@ from decimal import Decimal
 from importlib.resources import path
 from itertools import chain
 from pathlib import Path
+from timeline.file_processors.balance import process_balance_list
 from timeline.file_processors.calendar import process_icalendar, process_calendar_db
 from timeline.post_processors.geo import add_reverse_geolocation
 from timeline.file_processors.google_takeout import process_google_browser_history, process_google_location_history
@@ -48,6 +49,7 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
     )
 
     timeline_file_processors = [
+        process_balance_list,
         process_calendar_db,
         process_gpx,
         process_icalendar,
