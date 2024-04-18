@@ -2,6 +2,7 @@ export default Vue.component('timeline-nav', {
   data() {
     return {
       keypressListener: null,
+      showDateInput: false,
     };
   },
   mounted() {
@@ -35,8 +36,13 @@ export default Vue.component('timeline-nav', {
     },
   },
   methods: {
-    pickTimelineDate(date) {
-      this.timelineDate = moment(date);
+    editDate() {
+      this.showDateInput = true;
+      Vue.nextTick(() => {
+        this.$refs.dateInput.value = moment(this.timelineDate).format('YYYY-MM-DD');
+        this.$refs.dateInput.focus();
+        this.$refs.dateInput.select();
+      });
     },
     routerDateLink(quantity, unit) {
       return {
@@ -49,6 +55,18 @@ export default Vue.component('timeline-nav', {
     },
     moveTimelineDate(quantity, unit){
       this.$router.push(this.routerDateLink(quantity, unit));
+    },
+    onDateInput(event) {
+      const date = moment(event.target.value);
+      if(date.isValid()){
+        this.$router.push({
+          name: 'timeline',
+          query: {
+            ...this.$route.query,
+            date: date.format('YYYY-MM-DD'),
+          },
+        });
+      }
     },
     onKeydown(event) {
       if(event.key === 'd' || event.key === 'ArrowRight'){
@@ -75,6 +93,10 @@ export default Vue.component('timeline-nav', {
       else if(event.key === 'Y'){
         this.moveTimelineDate('years', -1);
       }
+      else if(event.key === '/'){
+        event.preventDefault();
+        this.editDate();
+      }
     },
   },
   template: `
@@ -85,7 +107,19 @@ export default Vue.component('timeline-nav', {
         <router-link title="Next week — Press 'W'" :to="routerDateLink('weeks', -1)">W</router-link>
         <router-link title="Tomorrow — Right arrow or 'D'" :to="routerDateLink('days', -1)">D</router-link>
       </div>
-      <h1>
+      <div class="timeline-date" v-if="showDateInput">
+        <input
+          placeholder="YYYY-MM-DD"
+          ref="dateInput"
+          size="10"
+          type="text"
+          @keydown.stop=""
+          @input="onDateInput"
+          @keydown.enter.stop="showDateInput = false"
+          @blur="showDateInput = false">
+        <small>{{ timelineDate.format('LL') }}</small>
+      </div>
+      <h1 class="timeline-date" v-if="!showDateInput" @click="editDate">
         <time>{{ timelineDate.format('LL') }}</time>
         <small>{{ timelineDate.format('dddd') }}, {{ relativeTimelineDate }}</small>
       </h1>

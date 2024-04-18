@@ -89,17 +89,35 @@ body{
     color: var(--c-text);
 }
 
-h1{
+.timeline-date time, .timeline-date input{
     font-size: var(--xxxl);
-    margin: var(--xl) 0;
+    display: block;
+    margin: var(--xl) auto 0;
     font-family: var(--f-text);
-    line-height: var(--line-height-heading);
+    line-height: calc(var(--line-height-heading) * var(--xxxl));
+    padding: 0;
+    border: 0;
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+    border-radius: var(--b-radius);
 }
-    h1 small{
+    .timeline-date time:hover{
+        cursor:pointer;
+        background: var(--c-widget);
+    }
+    .timeline-date input{
+        background: var(--c-widget);
+        border-radius: var(--b-radius);
+        outline-color: var(--c-text-link);
+        font-family: var(--f-data);
+        font-size: var(--xl);
+    }
+    .timeline-date small{
         font-size: var(--m);
         font-family: var(--f-data);
         color: var(--c-text-light);
-        margin-top:var(--s);
+        margin:var(--s) 0 var(--xl);
         display: block;
     }
 h2{
@@ -166,7 +184,7 @@ a{
     align-items: center;
     text-align: center;
 }
-    .timeline-nav h1{
+    .timeline-nav .timeline-date{
         grid-area: date;
     }
     .timeline-nav .back, .timeline-nav .forward{
