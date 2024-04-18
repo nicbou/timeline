@@ -433,3 +433,30 @@ a{
         text-align: right;
         font-size: var(--m);
     }
+
+.entry.search{
+    background: var(--c-widget);
+    padding: var(--s);
+    display: grid;
+    grid-template-columns: 2em 1fr auto;
+    grid-template-areas: "icon query time";
+    align-items: center;
+    position: relative;
+    gap: var(--m);
+    color: var(--c-text);
+}
+    .entry.search:hover{
+        color: var(--c-text-link);
+    }
+    .entry.search > i{
+        grid-area: icon;
+        text-align: center;
+    }
+    .entry.transaction .query{
+        grid-area: query;
+    }
+    .entry.transaction time{
+        grid-area: time;
+        text-align: right;
+        font-size: var(--m);
+    }
