@@ -2,7 +2,7 @@
 
 Point it at your files, and it generates a timeline of your life. The timeline is a simple static website. See your photos, videos, calendar events, diary entries, geolocation history and bank transactions day by day. Scroll through your data the same way you scroll through your photos.
 
-![Screenshot of the timeline](https://nicolasbouliane.com/images/timeline-1.png)
+![Screenshot of the timeline](https://nicolasbouliane.com/images/content2x/timeline-2.webp)
 
 This project does the same thing as the [old timeline](https://github.com/nicbou/timeline-old), but it's simpler, lighter and easier to run. It's meant to be used by other humans.
 
@@ -116,6 +116,8 @@ If a file name ends with a date, that date will be used:
 
 Some file extensions hint at files that have a special purpose on the timeline.
 
-- `.journal.md` marks a Markdown file as a journal entry. Those are displayed more prominently on the timeline.
-- `.n26.csv` marks a CSV file as an N26 bank transaction export. Each line will be added to the timeline as a bank transaction.
-- `.searches.csv` marks a CSV file as a log of internet searches. It has 3 columns: `date` (an ISO-8601 date), `query` (the search query) and `url` (the optional URL of the search results)
+- `*.journal.md` marks a Markdown file as a journal entry. Those are displayed more prominently on the timeline.
+- `*.n26.csv` marks a CSV file as an N26 bank transaction export. Each line will be added to the timeline as a bank transaction.
+- `*.kontist.csv` marks a CSV file as an Kontist bank transaction export. Each line will be added to the timeline as a bank transaction.
+- `*.searches.csv` marks a CSV file as a log of internet searches. It has 3 columns: `date` (an ISO-8601 datetime), `query` (the search query) and `url` (the optional URL of the search results)
+- `*.balances.csv` marks a CSV file as a log of bank account balances. It has 3 columns: `date` (a `YYYY-MM-DD` date), `account` (the name of the account) and `balance` (the balance of the account at that time)
