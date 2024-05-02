@@ -4,7 +4,7 @@ import reverse_geocode
 
 def add_reverse_geolocation(entry: TimelineEntry):
     if (
-        (location := entry.data.get('geolocation', {}))
+        (location := entry.data.get('location', {}))
         and (lat := location.get('latitude'))
         and (lng := location.get('longitude'))
     ):
