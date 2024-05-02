@@ -126,7 +126,7 @@ def get_image_metadata(image_path: Path) -> dict:
         try:
             gps_time = ":".join(f"{int(timefragment):02}" for timefragment in gps_time_fragments)
             gps_datetime = f"{gps_date} {gps_time}"
-            metadata['media']['creation_date'] = parse_exif_date(gps_datetime).astimezone(timezone.utc)
+            metadata['media']['creation_date'] = parse_exif_date(gps_datetime).replace(tzinfo=timezone.utc)
         except ValueError:
             logger.warning(f"Could not parse EXIF GPS date '{gps_datetime}' - {image_path}")
     elif exif_date := (exif.get('DateTimeOriginal') or exif.get('DateTime')):
