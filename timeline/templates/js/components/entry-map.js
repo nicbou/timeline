@@ -10,8 +10,8 @@ export default Vue.component('entry-map', {
     markers() {
       return this.entries.filter(e => e.data.location && e.data.location.latitude && e.data.location.longitude).map(e => {
         return {
-          lat: e.data.location.latitude,
-          lng: e.data.location.longitude,
+          lat: Number(e.data.location.latitude),
+          lng: Number(e.data.location.longitude),
         };
       });
     },

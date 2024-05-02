@@ -142,8 +142,8 @@ def process_video(file: TimelineFile, metadata_root: Path):
     if ffprobe_data['format'].get('tags', {}).get('location'):
         lat, lng, alt = parse_video_geolocation(ffprobe_data['format']['tags']['location'])
         entry_data['location'] = {
-            'latitude': lat,
-            'longitude': lng,
+            'latitude': float(lat),
+            'longitude': float(lng),
         }
         if alt:
             entry_data['location']['altitude'] = alt
