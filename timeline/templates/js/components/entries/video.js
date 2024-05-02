@@ -12,7 +12,10 @@ export default Vue.component('video-entry', {
       if(this.entry.data.location && this.entry.data.location.city){
         return [this.entry.data.location.city, this.entry.data.location.country].join(', ');
       }
-    }
+    },
+    time() {
+      return moment(this.entry.date_start).format('H:mm');
+    },
   },
   methods: {
     videoHoverStart: function() {
@@ -31,6 +34,7 @@ export default Vue.component('video-entry', {
           ref="videoElement"/>
         <figcaption v-if="caption">{{ caption }}</figcaption>
       </figure>
+      <time v-if="time !== '0:00'">{{ time }}</time>
     </article>
   `
 });

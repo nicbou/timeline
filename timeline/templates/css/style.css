@@ -251,7 +251,22 @@ a{
     max-width: 100%;
     background: var(--c-widget);
     height: var(--grid-h);
+    position: relative;
 }
+    .entry.image time, .entry.video time{
+        font-size: var(--m);
+        position: absolute;
+        top: 0;
+        right: 0;
+        backdrop-filter: blur(10px) brightness(0.7);
+        border-radius: 0 0 0 var(--b-radius);
+        padding: var(--s);
+        color: var(--c-text-inverted);
+        display: none;
+    }
+    .entry.image:hover time, .entry.video:hover time{
+        display: inline;
+    }
     .entry.video figure:before{
         content: '⏵';
         position: absolute;
