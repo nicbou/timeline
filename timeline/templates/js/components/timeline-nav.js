@@ -102,10 +102,10 @@ export default Vue.component('timeline-nav', {
   template: `
     <nav class="timeline-nav">
       <div class="controls back">
-        <router-link title="Next year — Press 'Y'" :to="routerDateLink('years', -1)">Y</router-link>
-        <router-link title="Next month — Press 'M'" :to="routerDateLink('months', -1)">M</router-link>
-        <router-link title="Next week — Press 'W'" :to="routerDateLink('weeks', -1)">W</router-link>
-        <router-link title="Tomorrow — Right arrow or 'D'" :to="routerDateLink('days', -1)">D</router-link>
+        <router-link title="Previous year — Shift + 'Y'" :to="routerDateLink('years', -1)">Y</router-link>
+        <router-link title="Previous month — Shift + 'M'" :to="routerDateLink('months', -1)">M</router-link>
+        <router-link title="Previous week — Shift + 'W'" :to="routerDateLink('weeks', -1)">W</router-link>
+        <router-link title="Previous day — Left arrow or Shift + 'D'" :to="routerDateLink('days', -1)">D</router-link>
       </div>
       <div class="timeline-date" v-if="showDateInput">
         <input
@@ -124,10 +124,10 @@ export default Vue.component('timeline-nav', {
         <small>{{ timelineDate.format('dddd') }}, {{ relativeTimelineDate }}</small>
       </h1>
       <div class="controls forward">
-        <router-link title="Last year — Shift + Y" :disabled="!showTomorrow" :to="routerDateLink('days', 1)">D</router-link>
-        <router-link title="Last month — Shift + M" :disabled="!showNextWeek" :to="routerDateLink('weeks', 1)">W</router-link>
-        <router-link title="Last week — Shift + W" :disabled="!showNextMonth" :to="routerDateLink('months', 1)">M</router-link>
-        <router-link title="Yesterday — Left arrow or Shift + D" :disabled="!showNextYear" :to="routerDateLink('years', 1)">Y</router-link>
+        <router-link title="Next day — Right arrow or 'D'" :disabled="!showTomorrow" :to="routerDateLink('days', 1)">D</router-link>
+        <router-link title="Next week — Press 'W'" :disabled="!showNextWeek" :to="routerDateLink('weeks', 1)">W</router-link>
+        <router-link title="Next month — Press 'M'" :disabled="!showNextMonth" :to="routerDateLink('months', 1)">M</router-link>
+        <router-link title="Next year — Press 'Y'" :disabled="!showNextYear" :to="routerDateLink('years', 1)">Y</router-link>
       </div>
     </nav>
   `
