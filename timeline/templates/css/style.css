@@ -164,7 +164,7 @@ a{
     grid-auto-flow: dense;
     gap: var(--grid-gap);
     margin:0 auto;
-    padding: 0 var(--m);
+    padding: 0 var(--m) var(--m);
     justify-content: center;
 }
 
@@ -290,6 +290,8 @@ a{
         position: relative;
         width: 100%;
         height: 100%;
+        backdrop-filter: blur(10px) brightness(0.7);
+        background-size: cover;
     }
         .entry.image figcaption, .entry.video figcaption{
             display: none;

@@ -15,10 +15,13 @@ export default Vue.component('image-entry', {
     },
     time() {
       return moment(this.entry.date_start).format('H:mm');
-    }
+    },
+    cssBackground() {
+      return `url("${this.imgSrc}")`;
+    },
   },
   template: `
-    <article class="entry image">
+    <article class="entry image" :style="{backgroundImage: cssBackground}">
       <figure>
         <img :src="imgSrc">
         <figcaption v-if="caption">{{ caption }}</figcaption>
