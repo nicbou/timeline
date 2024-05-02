@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from PIL import Image, ImageFile, ExifTags
 from PIL.ImageOps import exif_transpose
@@ -43,11 +43,10 @@ def get_image_exif(pil_image) -> dict:
 def parse_exif_date(date_str: str) -> datetime:
     # Official format: YYYY:MM:DD HH:MM:SS
     # Also seen: YYYY-MM-DD HH:MM:SS and YYYY-MM-DDTHH:MM:SS+ZZZZ
-    # Assumes that the dates are in the current timezone
     return datetime.strptime(
         date_str.replace('\x00', '').replace('-', ':').replace('T', ' ')[:19],
         '%Y:%m:%d %H:%M:%S'
-    ).astimezone()
+    )
 
 
 def parse_exif_coordinate(dms, ref):
@@ -127,13 +126,14 @@ def get_image_metadata(image_path: Path) -> dict:
         try:
             gps_time = ":".join(f"{int(timefragment):02}" for timefragment in gps_time_fragments)
             gps_datetime = f"{gps_date} {gps_time}"
-            metadata['media']['creation_date'] = parse_exif_date(gps_datetime)
+            metadata['media']['creation_date'] = parse_exif_date(gps_datetime).astimezone(timezone.utc)
         except ValueError:
             logger.warning(f"Could not parse EXIF GPS date '{gps_datetime}' - {image_path}")
     elif exif_date := (exif.get('DateTimeOriginal') or exif.get('DateTime')):
-        # There is no timezone information on exif dates
+        # There is no timezone information on exif dates.
+        # Assumes that the dates are in the current timezone
         try:
-            metadata['media']['creation_date'] = parse_exif_date(exif_date)
+            metadata['media']['creation_date'] = parse_exif_date(exif_date).astimezone()
         except ValueError:
             logger.exception(f"Could not parse EXIF date '{exif_date}' ({image_path})")
 
