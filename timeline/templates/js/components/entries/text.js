@@ -14,7 +14,7 @@ export default Vue.component('text-entry', {
     },
   },
   async mounted(){
-    const req = await fetch(`${config.domain}/metadata/${this.entry.checksum}/content.txt`);
+    const req = await fetch(`${config.siteUrl}/metadata/${this.entry.checksum}/content.txt`);
     this.text = await req.text();
   },
   template: `

@@ -4,7 +4,7 @@ export default Vue.component('transaction-entry', {
   props: ['entry'],
   computed: {
     entryIcon() {
-      return `/images/${this.entry.data.account.toLowerCase()}.png`;
+      return `${config.siteUrl}/images/${this.entry.data.account.toLowerCase()}.png`;
     },
     amount() {
       const amount = Math.round(Number(this.entry.data.amount));

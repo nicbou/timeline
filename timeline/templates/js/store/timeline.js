@@ -46,7 +46,7 @@ export default {
     async getEntries(context, { date, forceRefresh }) {
       if (context.state.entriesRequestStatus === RequestStatus.NONE || forceRefresh) {
         context.commit('ENTRIES_REQUEST_PENDING');
-        const entriesRequestPromise = fetch(`${config.domain}/entries/${date}.json`)
+        const entriesRequestPromise = fetch(`${config.siteUrl}/entries/${date}.json`)
           .then(response => response.ok ? response.json() : Promise.reject(response))
           .then(json => {
             json.entries.forEach((entry, index) => {
@@ -69,7 +69,7 @@ export default {
     async getFinances(context, forceRefresh=false) {
       if (context.state.financesRequestStatus === RequestStatus.NONE || forceRefresh) {
         context.commit('FINANCES_REQUEST_PENDING');
-        const financesRequestPromise = fetch(`${config.domain}/entries/finances.json`)
+        const financesRequestPromise = fetch(`${config.siteUrl}/entries/finances.json`)
           .then(response => response.ok ? response.json() : Promise.reject(response))
           .then(json => {
             context.commit('SET_FINANCES', json);

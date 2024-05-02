@@ -9,7 +9,7 @@ export default Vue.component('diary-entry', {
     }
   },
   async mounted(){
-    const req = await fetch(`${config.domain}/metadata/${this.entry.checksum}/content.html`);
+    const req = await fetch(`${config.siteUrl}/metadata/${this.entry.checksum}/content.html`);
     this.html = await req.text();
   },
   template: `

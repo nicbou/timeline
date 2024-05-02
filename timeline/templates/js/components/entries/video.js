@@ -6,7 +6,7 @@ export default Vue.component('video-entry', {
     videoSrc() {
       const pathParts = this.entry.file_path.split('.');
       const extension = pathParts[pathParts.length - 1];
-      return `${config.domain}/metadata/${this.entry.checksum}/thumbnail.webm`;
+      return `${config.siteUrl}/metadata/${this.entry.checksum}/thumbnail.webm`;
     },
     caption() {
       if(this.entry.data.location && this.entry.data.location.city){

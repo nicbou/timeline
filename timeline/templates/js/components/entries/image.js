@@ -6,7 +6,7 @@ export default Vue.component('image-entry', {
     imgSrc() {
       const pathParts = this.entry.file_path.split('.');
       const extension = pathParts[pathParts.length - 1];
-      return `${config.domain}/metadata/${this.entry.checksum}/thumbnail.webp`;
+      return `${config.siteUrl}/metadata/${this.entry.checksum}/thumbnail.webp`;
     },
     caption() {
       if(this.entry.data.location && this.entry.data.location.city){
