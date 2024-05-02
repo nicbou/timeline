@@ -9,7 +9,7 @@ def process_kontist_transactions(file: TimelineFile, metadata_root: Path):
     if not file.file_path.name.lower().endswith('.kontist.csv'):
         return
 
-    for line in csv.DictReader(codecs.iterdecode(file.file_path.open('rb'), 'latin-1'), delimiter=';', quotechar='"'):
+    for line in csv.DictReader(codecs.iterdecode(file.file_path.open('rb'), 'utf-8'), delimiter=';', quotechar='"'):
         # No timezone attached. Assume current system timezone.
         transaction_date = datetime.strptime(line['Wertstellungsdatum'], '%Y-%m-%d').astimezone()
         yield TimelineEntry(
