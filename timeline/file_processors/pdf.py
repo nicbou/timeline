@@ -16,7 +16,7 @@ def process_pdf(file: TimelineFile, metadata_root: Path):
         pdf_file = fitz.open(file.file_path)
         pixmap = pdf_file[0].get_pixmap(dpi=128, alpha=False)
         image = Image.frombytes('RGB', [pixmap.width, pixmap.height], pixmap.samples)
-        image.thumbnail((800, 1128), Image.LANCZOS)  # 1128:800 is the ratio of an A4 sheet
+        image.thumbnail((800, 1128), Image.Resampling.LANCZOS)  # 1128:800 is the ratio of an A4 sheet
         output_path = metadata_root / file.checksum / 'thumbnail.webp'
         output_path.parent.mkdir(parents=True, exist_ok=True)
         image.save(output_path, optimize=True, exact=True)

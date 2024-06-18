@@ -21,10 +21,10 @@ setup(
     install_requires=[
         'gpxpy==1.5.0',
         'icalendar==5.0.10',
-        'Markdown==3.5',
-        'Pillow==10.0.1',
+        'Markdown==3.5.2',
+        'Pillow==10.3.0',
         'platformdirs==3.10.0',
-        'PyMuPDF==1.21.1',
+        'PyMuPDF==1.24.5',
         'pytz',
         'reverse-geocode==1.4.1',
     ],

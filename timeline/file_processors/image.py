@@ -143,7 +143,7 @@ def get_image_metadata(image_path: Path) -> dict:
 def make_thumbnail(image_path: Path, output_path: Path, max_width: int, max_height: int):
     with Image.open(image_path) as image:
         exif_transpose(image, in_place=True)
-        image.thumbnail((max_width, max_height), Image.LANCZOS)
+        image.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
         save_args = {'optimize': True, 'exact': True}
         output_path.parent.mkdir(parents=True, exist_ok=True)
         image.save(output_path, **save_args)
