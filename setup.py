@@ -27,6 +27,7 @@ setup(
         'PyMuPDF==1.24.5',
         'pytz',
         'reverse-geocode==1.4.1',
+        'timezonefinder==6.5.2',
     ],
     zip_safe=False,
 )

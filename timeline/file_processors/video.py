@@ -1,16 +1,19 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 from timeline.file_processors import dates_from_file
 from timeline.models import TimelineFile, TimelineEntry, EntryType
+from timezonefinder import TimezoneFinder
 import json
 import logging
+import pytz
 import re
 import shutil
 import subprocess
 
 
 logger = logging.getLogger(__name__)
+tz_finder = TimezoneFinder()
 
 
 video_extensions = set([
@@ -149,7 +152,22 @@ def process_video(file: TimelineFile, metadata_root: Path):
             entry_data['location']['altitude'] = alt
 
     if ffprobe_data['format'].get('tags', {}).get('creation_time'):
-        date_start = datetime.strptime(ffprobe_data['format']['tags']['creation_time'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        # The dates are stored as UTC. EXIF metadata might contain timezone-aware dates, but accessing them would
+        # require exiftool, which is a non-Python external dependency. It's easier to just get the timezone from the
+        # GPS coordinates.
+        date_start = datetime.strptime(
+            ffprobe_data['format']['tags']['creation_time'],
+            '%Y-%m-%dT%H:%M:%S.%fZ'
+        ).replace(tzinfo=timezone.utc)
+
+        if entry_data.get('location'):
+            timezone_string = tz_finder.timezone_at(
+                lat=entry_data['location']['latitude'],
+                lng=entry_data['location']['longitude']
+            )
+            date_start = date_start.astimezone(pytz.timezone(timezone_string))
+
+
 
     output_path = metadata_root / file.checksum / 'thumbnail.webm'
     if not output_path.exists():
