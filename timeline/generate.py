@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from importlib.resources import path
+from importlib.resources import files
 from itertools import chain
 from pathlib import Path
 from timeline.file_processors.balance import process_balance_list
@@ -150,7 +150,7 @@ def generate(input_paths, includerules, ignorerules, output_root: Path, site_url
     process_timeline_files(cursor, input_paths, includerules, ignorerules, metadata_root)
     connection.commit()
 
-    templates_root = path(package=templates, resource="").__enter__()
+    templates_root = files("timeline") / 'templates'
 
     # Copy frontend code and assets
     for file in get_files_in_paths([templates_root, ]):
