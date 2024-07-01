@@ -112,7 +112,7 @@ def test_process_text(tmp_path):
         checksum='not important',
         size=111,
     )
-    entries = process_text(timeline_file, [], tmp_path)
+    entries = list(process_text(timeline_file, tmp_path))
     assert entries[0].file_path == file_path
     assert entries[0].entry_type == EntryType.TEXT
     assert entries[0].date_start == datetime.fromtimestamp(file_path.stat().st_mtime).astimezone()
