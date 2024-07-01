@@ -9,6 +9,7 @@ import TimelineSearchEntry from './entries/search.js';
 import TimelineTextEntry from './entries/text.js';
 import TimelineTransactionEntry from './entries/transaction.js';
 import TimelineVideoEntry from './entries/video.js';
+import { formattedAmount } from './../libs/currency.js';
 import { RequestStatus } from './../models/requests.js';
 
 function makeRouteValid(to, from, next) {
@@ -43,8 +44,8 @@ export default Vue.component('timeline', {
     entries() {
       return this.$store.state.timeline.entries;
     },
-    finances() {
-      return this.$store.state.timeline.finances;
+    balances() {
+      return this.$store.state.timeline.finances[this.$route.query.date];
     },
     isLoading() {
       return this.$store.state.timeline.entriesRequestStatus === RequestStatus.PENDING;
@@ -57,6 +58,7 @@ export default Vue.component('timeline', {
         return componentName;
       }
     },
+    formattedAmount
   },
   mounted(){
     this.$store.dispatch('timeline/getFinances', true);
@@ -65,6 +67,15 @@ export default Vue.component('timeline', {
     <main id="layout">
       <timeline-nav id="timeline-nav"></timeline-nav>
       <spinner v-if="isLoading"></spinner>
+      <div class="daily-summary" v-show="!isLoading">
+        <div v-if="balances">
+          <i class="fa-solid fa-piggy-bank"></i>
+          {{ formattedAmount(balances.total.amount) }}
+          <template v-if="balances.total.transactionAmount">
+            ({{ formattedAmount(balances.total.transactionAmount) }})    
+          </template>
+        </div>
+      </div>
       <entry-map v-show="!isLoading" :entries="entries"></entry-map>
       <component
         :entry="entry"

@@ -226,6 +226,20 @@ a{
             }
     }
 
+.daily-summary{
+    width: 100%;
+    max-width: var(--grid-w2);
+    margin: 0 auto;
+    grid-column: 1 / -1;
+}
+    .daily-summary > div{
+        display: inline-block;
+        flex: 1 1 fit-content;
+        background: var(--c-widget);
+        border-radius: var(--b-radius);
+        padding: var(--s);
+    }
+
 .entry-map, .entry{
     width: 100%;
     max-width: var(--grid-w2);
@@ -236,7 +250,6 @@ a{
     width: 100%;
     box-sizing: border-box;
     border-radius: var(--b-radius);
-    overflow: hidden;
 }
 .entry{
     word-break: break-word;

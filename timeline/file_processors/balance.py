@@ -12,7 +12,7 @@ def process_balance_list(file: TimelineFile, metadata_root: Path):
 
     for line in csv.DictReader(codecs.iterdecode(file.file_path.open('rb'), 'utf-8'), delimiter=',', quotechar='"'):
         # No timezone attached. Assume current system timezone.
-        balance_date = datetime.strptime(line['date'], '%Y-%m-%d').astimezone()
+        balance_date = datetime.strptime(line['date'].strip(), '%Y-%m-%d').astimezone()
         yield TimelineEntry(
             file_path=file.file_path,
             checksum=file.checksum,
@@ -20,7 +20,7 @@ def process_balance_list(file: TimelineFile, metadata_root: Path):
             date_start=balance_date,
             date_end=None,
             data={
-                'account': line['account'],
-                'amount': str(Decimal(line['balance'])),  # String, not number
+                'account': line['account'].strip(),
+                'amount': str(Decimal(line['balance'].strip())),  # String, not number
             }
         )

@@ -1,4 +1,5 @@
 import config from './../../config.js';
+import {formattedAmount} from './../../libs/currency.js';
 
 export default Vue.component('transaction-entry', {
   props: ['entry'],
@@ -7,16 +8,7 @@ export default Vue.component('transaction-entry', {
       return `${config.siteUrl}/images/${this.entry.data.account.toLowerCase()}.png`;
     },
     amount() {
-      const amount = Math.round(Number(this.entry.data.amount));
-      let formattedAmount = (Math.round(amount * 100) / 100).toLocaleString('en-GB');
-
-      if(formattedAmount === '-0.00'){
-        formattedAmount = '0.00';
-      }
-      else if(formattedAmount === '-0'){
-        formattedAmount = '0';
-      }
-      return `${formattedAmount} €`.replace('-', '−');
+      return formattedAmount(this.entry.data.amount)
     },
   },
   template: `

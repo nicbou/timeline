@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from importlib.resources import files
 from itertools import chain
@@ -122,20 +122,59 @@ def generate_daily_entry_lists(cursor, output_path: Path):
     logger.info(f"Generated entry lists for {len(days_to_update)} days: updated {days_updated}, removed {len(days_to_delete)}")
 
 
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return str(obj)  # Or float(obj) if you prefer float representation
+        return super(DecimalEncoder, self).default(obj)
+
+
 def generate_financial_report(cursor, output_path: Path):
-    logger.info("Generating transaction report")
+    logger.info("Generating financial report")
+
+    # List the total amount of transactions for each day
     transaction_amount_by_day = {}
     for entry in db.get_entries_by_type(cursor, EntryType.TRANSACTION):
         amount = Decimal(entry.data['amount'])
-        date = entry.date_start.strftime('%Y-%m-%d')
-        transaction_amount_by_day.setdefault(date, Decimal('0'))
-        transaction_amount_by_day[date] += amount
+        date_str = entry.date_start.strftime('%Y-%m-%d')
+        transaction_amount_by_day.setdefault(date_str, Decimal('0'))
+        transaction_amount_by_day[date_str] += amount
 
-    for key in transaction_amount_by_day:
-        transaction_amount_by_day[key] = str(transaction_amount_by_day[key])
+    balances_by_date = {}
+    first_balance_date = None  # The first recorded account balance. There is no history before that.
+    for entry in db.get_entries_by_type(cursor, EntryType.BALANCE):
+        first_balance_date = first_balance_date or entry.date_start.date()
+        date_str = entry.date_start.strftime('%Y-%m-%d')
+        account = entry.data['account']
+
+        balances_by_date.setdefault(date_str, {})
+        balances_by_date[date_str][account] = {
+            'amount': Decimal(entry.data['amount']),
+            'date': date_str,
+        }
+
+    current_date = first_balance_date
+    while current_date < datetime.now().date():
+        previous_balance = balances_by_date[current_date.strftime('%Y-%m-%d')].copy()
+        current_date += timedelta(days=1)
+        current_date_str = current_date.strftime('%Y-%m-%d')
+        current_balance = balances_by_date.get(current_date_str, {})
+        balances_by_date[current_date_str] = previous_balance
+        balances_by_date[current_date_str].update(current_balance)
+
+    for current_date_str in balances_by_date:
+        balances_by_date[current_date_str]['total'] = {
+            'amount': sum([b['amount'] for b in balances_by_date[current_date_str].values() ]),
+            'date': max(b['date'] for b in balances_by_date[current_date_str].values()),
+            'transactionAmount': transaction_amount_by_day.get(current_date_str, Decimal(0))
+        }
 
     with output_path.open('w') as json_file:
-        json.dump(transaction_amount_by_day, json_file)
+        json.dump(
+            balances_by_date,
+            json_file,
+            cls=DecimalEncoder
+        )
 
 
 def generate(input_paths, includerules, ignorerules, output_root: Path, site_url: str = '', google_maps_api_key: str = '', live_templates: bool = False):
