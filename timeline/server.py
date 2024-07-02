@@ -32,6 +32,7 @@ def serve(directory: Path, port: int = 80):
     Args:
         port (int, optional): The port on which to serve the static site. Default is port 80.
     """
+    socketserver.ThreadingTCPServer.allow_reuse_address = True
     request_handler = partial(HttpRequestHandler, directory=directory)
     with socketserver.ThreadingTCPServer(("", port), request_handler) as server:
         logging.info(f"Serving {directory} on port {port}")
