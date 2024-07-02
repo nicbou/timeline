@@ -117,7 +117,8 @@ If a file name ends with a date, that date will be used:
 Some file extensions hint at files that have a special purpose on the timeline.
 
 - `*.journal.md` marks a Markdown file as a journal entry. Those are displayed more prominently on the timeline.
-- `*.n26.csv` marks a CSV file as an N26 bank transaction export. Each line will be added to the timeline as a bank transaction.
-- `*.kontist.csv` marks a CSV file as an Kontist bank transaction export. Each line will be added to the timeline as a bank transaction.
 - `*.searches.csv` marks a CSV file as a log of internet searches. It has 3 columns: `date` (an ISO-8601 datetime), `query` (the search query) and `url` (the optional URL of the search results)
 - `*.balances.csv` marks a CSV file as a log of bank account balances. It has 3 columns: `date` (a `YYYY-MM-DD` date), `account` (the name of the account) and `balance` (the balance of the account at that time)
+- `*.n26.csv` marks a CSV file as an N26 bank transaction export. Each line will be added to the timeline as a bank transaction.
+- `*.kontist.csv` marks a CSV file as an Kontist bank transaction export. Each line will be added to the timeline as a bank transaction.
+- `*.degiro.csv` marks a CSV file as a Degiro transaction export. Each line will be added to the timeline as a transaction.

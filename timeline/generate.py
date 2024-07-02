@@ -5,6 +5,7 @@ from itertools import chain
 from pathlib import Path
 from timeline.file_processors.balance import process_balance_list
 from timeline.file_processors.calendar import process_icalendar, process_calendar_db
+from timeline.file_processors.degiro import process_degiro_transactions
 from timeline.post_processors.geo import add_reverse_geolocation
 from timeline.file_processors.google_takeout import process_google_browser_history, process_google_location_history
 from timeline.file_processors.gpx import process_gpx
@@ -51,6 +52,9 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
     timeline_file_processors = [
         process_balance_list,
         process_calendar_db,
+        process_degiro_transactions,
+        process_google_browser_history,
+        process_google_location_history,
         process_gpx,
         process_icalendar,
         process_image,
@@ -60,8 +64,6 @@ def process_timeline_files(cursor, input_paths, includerules, ignorerules, metad
         process_pdf,
         process_search_logs,
         process_text,
-        process_google_location_history,
-        process_google_browser_history,
     ]
 
     timeline_post_processors = [
