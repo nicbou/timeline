@@ -23,115 +23,115 @@ export default Vue.component('weather', {
       return {
         "0": {
           description: "Sunny",
-          image: "http://openweathermap.org/img/wn/01d@2x.png"
+          image: "fas fa-sun"
         },
         "1": {
           description: "Mainly Sunny",
-          image: "http://openweathermap.org/img/wn/01d@2x.png"
+          image: "fas fa-sun"
         },
         "2": {
           description: "Partly Cloudy",
-          image: "http://openweathermap.org/img/wn/02d@2x.png"
+          image: "fas fa-cloud-sun"
         },
         "3": {
           description: "Cloudy",
-          image: "http://openweathermap.org/img/wn/03d@2x.png"
+          image: "fas fa-cloud"
         },
         "45": {
           description: "Foggy",
-          image: "http://openweathermap.org/img/wn/50d@2x.png"
+          image: "fas fa-water"
         },
         "48": {
           description: "Rime Fog",
-          image: "http://openweathermap.org/img/wn/50d@2x.png"
+          image: "fas fa-water"
         },
         "51": {
           description: "Light Drizzle",
-          image: "http://openweathermap.org/img/wn/09d@2x.png"
+          image: "fas fa-cloud-rain"
         },
         "53": {
           description: "Drizzle",
-          image: "http://openweathermap.org/img/wn/09d@2x.png"
+          image: "fas fa-cloud-rain"
         },
         "55": {
           description: "Heavy Drizzle",
-          image: "http://openweathermap.org/img/wn/09d@2x.png"
+          image: "fas fa-cloud-showers-heavy"
         },
         "56": {
           description: "Light Freezing Drizzle",
-          image: "http://openweathermap.org/img/wn/09d@2x.png"
+          image: "fas fa-cloud-showers-heavy"
         },
         "57": {
           description: "Freezing Drizzle",
-          image: "http://openweathermap.org/img/wn/09d@2x.png"
+          image: "fas fa-cloud-rain"
         },
         "61": {
           description: "Light Rain",
-          image: "http://openweathermap.org/img/wn/10d@2x.png"
+          image: "fas fa-cloud-showers-heavy"
         },
         "63": {
           description: "Rain",
-          image: "http://openweathermap.org/img/wn/10d@2x.png"
+          image: "fas fa-cloud-showers-heavy"
         },
         "65": {
           description: "Heavy Rain",
-          image: "http://openweathermap.org/img/wn/10d@2x.png"
+          image: "fas fa-cloud-showers-heavy"
         },
         "66": {
           description: "Light Freezing Rain",
-          image: "http://openweathermap.org/img/wn/10d@2x.png"
+          image: "fas fa-cloud-rain"
         },
         "67": {
           description: "Freezing Rain",
-          image: "http://openweathermap.org/img/wn/10d@2x.png"
+          image: "fas fa-cloud-showers-heavy"
         },
         "71": {
           description: "Light Snow",
-          image: "http://openweathermap.org/img/wn/13d@2x.png"
+          image: "far fa-snowflake"
         },
         "73": {
           description: "Snow",
-          image: "http://openweathermap.org/img/wn/13d@2x.png"
+          image: "far fa-snowflake"
         },
         "75": {
           description: "Heavy Snow",
-          image: "http://openweathermap.org/img/wn/13d@2x.png"
+          image: "far fa-snowflake"
         },
         "77": {
           description: "Snow Grains",
-          image: "http://openweathermap.org/img/wn/13d@2x.png"
+          image: "far fa-snowflake"
         },
         "80": {
           description: "Light Showers",
-          image: "http://openweathermap.org/img/wn/09d@2x.png"
+          image: "fas fa-cloud-showers-heavy"
         },
         "81": {
           description: "Showers",
-          image: "http://openweathermap.org/img/wn/09d@2x.png"
+          image: "fas fa-cloud-showers-heavy"
         },
         "82": {
           description: "Heavy Showers",
-          image: "http://openweathermap.org/img/wn/09d@2x.png"
+          image: "fas fa-cloud-showers-heavy"
         },
         "85": {
           description: "Light Snow Showers",
-          image: "http://openweathermap.org/img/wn/13d@2x.png"
+          image: "far fa-snowflake"
         },
         "86": {
           description: "Snow Showers",
-          image: "http://openweathermap.org/img/wn/13d@2x.png"
+          image: "far fa-snowflake"
         },
         "95": {
           description: "Thunderstorm",
-          image: "http://openweathermap.org/img/wn/11d@2x.png"
+          image: "fas fa-bolt"
         },
         "96": {
           description: "Light Thunderstorms With Hail",
-          image: "http://openweathermap.org/img/wn/11d@2x.png"
+          image: "fas fa-bolt"
         },
         "99": {
           description: "Thunderstorm With Hail",
-          image: "http://openweathermap.org/img/wn/11d@2x.png"
+          image: "fas fa-bolt"
         }
       }[this.weatherCode];
     },
@@ -153,8 +153,8 @@ export default Vue.component('weather', {
     }
   },
   template: `
-    <div class="weather" v-if="weatherType && temperature">
-      <img :src="weatherType?.image" :alt="weatherType?.description"> {{ temperature }}ºC
+    <div class="weather" :title="weatherType?.description" v-if="weatherType && temperature">
+      <i :class="weatherType?.image" :alt="weatherType?.description"></i> {{ temperature }}ºC
     </div>
   `
 });

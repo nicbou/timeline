@@ -241,13 +241,6 @@ a{
         line-height: var(--line-height-text);
     }
 
-    .weather img{
-        width: 40px;
-        display: inline;
-        margin: -10px -5px -10px -10px;
-        vertical-align: middle;
-    }
-
 .entry-map, .entry{
     width: 100%;
     max-width: var(--grid-w2);

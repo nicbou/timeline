@@ -51,6 +51,7 @@ export default Vue.component('timeline', {
           return {
             lat: Number(e.data.location.latitude),
             lng: Number(e.data.location.longitude),
+            name: e.data.location.city ? `${e.data.location.city}, ${e.data.location.country}` : null
           };
         })
         .slice(-1)[0];
@@ -80,14 +81,18 @@ export default Vue.component('timeline', {
       <timeline-nav id="timeline-nav"></timeline-nav>
       <div class="spinner" v-if="isLoading">Loading entries...</div>
       <div class="daily-summary" v-show="!isLoading">
+        <div v-if="lastLocation?.name">
+          <i class="fas fa-map-marker-alt"></i>
+          {{ lastLocation.name }}
+        </div>
+        <weather :date="timelineDate" :latitude="lastLocation?.lat" :longitude="lastLocation?.lng"></weather>
         <div v-if="balances">
           <i class="fa-solid fa-piggy-bank"></i>
           {{ formattedAmount(balances.total.amount) }}
-          <template v-if="balances.total.transactionAmount">
+          <template v-if="Number(balances.total.transactionAmount || 0)">
             ({{ formattedAmount(balances.total.transactionAmount) }})    
           </template>
         </div>
-        <weather :date="timelineDate" :latitude="lastLocation?.lat" :longitude="lastLocation?.lng"></weather>
       </div>
       <entry-map v-show="!isLoading" :entries="entries"></entry-map>
       <component
