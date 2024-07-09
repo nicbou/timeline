@@ -1,4 +1,3 @@
-import SpinnerComponent from './spinner.js';
 import TimelineMap from './entry-map.js';
 import TimelineNav from './timeline-nav.js';
 import TimelineDiaryEntry from './entries/diary.js';
@@ -9,6 +8,7 @@ import TimelineSearchEntry from './entries/search.js';
 import TimelineTextEntry from './entries/text.js';
 import TimelineTransactionEntry from './entries/transaction.js';
 import TimelineVideoEntry from './entries/video.js';
+import Weather from './weather.js';
 import { formattedAmount } from './../libs/currency.js';
 import { RequestStatus } from './../models/requests.js';
 
@@ -44,6 +44,18 @@ export default Vue.component('timeline', {
     entries() {
       return this.$store.state.timeline.entries;
     },
+    lastLocation() {
+      return this.entries
+        .filter(e => e.data.location && e.data.location.latitude && e.data.location.longitude)
+        .map(e => {
+          return {
+            lat: Number(e.data.location.latitude),
+            lng: Number(e.data.location.longitude),
+          };
+        })
+        .slice(-1)[0];
+
+    },
     balances() {
       return this.$store.state.timeline.finances[this.$route.query.date];
     },
@@ -66,7 +78,7 @@ export default Vue.component('timeline', {
   template: `
     <main id="layout">
       <timeline-nav id="timeline-nav"></timeline-nav>
-      <spinner v-if="isLoading"></spinner>
+      <div class="spinner" v-if="isLoading">Loading entries...</div>
       <div class="daily-summary" v-show="!isLoading">
         <div v-if="balances">
           <i class="fa-solid fa-piggy-bank"></i>
@@ -75,6 +87,7 @@ export default Vue.component('timeline', {
             ({{ formattedAmount(balances.total.transactionAmount) }})    
           </template>
         </div>
+        <weather :date="timelineDate" :latitude="lastLocation?.lat" :longitude="lastLocation?.lng"></weather>
       </div>
       <entry-map v-show="!isLoading" :entries="entries"></entry-map>
       <component
