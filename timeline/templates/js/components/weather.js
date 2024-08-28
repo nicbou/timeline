@@ -17,7 +17,7 @@ export default Vue.component('weather', {
         + `&longitude=${this.longitude}`
         + `&start_date=${this.date.format('YYYY-MM-DD')}`
         + `&end_date=${this.date.format('YYYY-MM-DD')}`
-        + "&daily=weather_code,temperature_2m_mean&timezone=auto"
+        + "&daily=weather_code,temperature_2m_max&timezone=auto"
     },
     weatherType(){
       return {
