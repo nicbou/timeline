@@ -18,7 +18,6 @@ from timeline.file_processors.text import process_text, process_markdown
 from timeline.file_processors.video import process_video, can_process_videos
 from timeline.filesystem import get_files_in_paths
 from timeline.models import TimelineFile, EntryType
-from timeline import templates
 from typing import Iterable
 import json
 import logging
