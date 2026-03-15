@@ -251,3 +251,4 @@ def generate(
 
     generate_daily_entry_lists(cursor, output_root / "entries")
     generate_financial_report(cursor, output_root / "entries" / "finances.json")
+    logger.info("Timeline generation done.")
