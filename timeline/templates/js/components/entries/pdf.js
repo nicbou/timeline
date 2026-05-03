@@ -4,18 +4,11 @@ export default Vue.component('pdf-entry', {
   props: ['entry'],
   computed: {
     imgSrc() {
-      const pathParts = this.entry.file_path.split('.');
-      const extension = pathParts[pathParts.length - 1];
       return `${config.siteUrl}/metadata/${this.entry.checksum}/thumbnail.webp`;
     },
-    filename() {
-      const pathParts = this.entry.file_path.split('/');
-      return pathParts[pathParts.length - 1];
-    }
   },
   methods: {
     onMouseMove(event){
-
       const targetRect = event.currentTarget.getBoundingClientRect();
       var y = event.clientY - targetRect.top;  //y position within the element.
 
@@ -29,7 +22,7 @@ export default Vue.component('pdf-entry', {
     <article class="entry image pdf">
       <figure ref="figure" @mousemove.capture="onMouseMove">
         <img ref="image" :src="imgSrc">
-        <figcaption>{{ filename }}</figcaption>
+        <figcaption>{{ entry.file_name }}</figcaption>
       </figure>
     </article>
   `

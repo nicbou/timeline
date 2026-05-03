@@ -4,8 +4,6 @@ export default Vue.component('video-entry', {
   props: ['entry'],
   computed: {
     videoSrc() {
-      const pathParts = this.entry.file_path.split('.');
-      const extension = pathParts[pathParts.length - 1];
       return `${config.siteUrl}/metadata/${this.entry.checksum}/thumbnail.webm`;
     },
     caption() {

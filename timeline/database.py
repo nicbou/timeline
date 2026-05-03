@@ -77,7 +77,7 @@ def create_timeline_files_table(cursor):
 
 def create_timeline_entries_table(cursor):
     # All entries on the timeline
-    cursor.execute("""
+    cursor.executescript("""
         CREATE TABLE IF NOT EXISTS timeline_entries (
             file_path TEXT NOT NULL REFERENCES timeline_files (file_path) ON DELETE CASCADE,
             entry_type TEXT NOT NULL,
@@ -85,6 +85,8 @@ def create_timeline_entries_table(cursor):
             date_end TIMESTAMP,
             entry_data TEXT NOT NULL
         );
+        CREATE INDEX IF NOT EXISTS idx_timeline_entries_dates ON timeline_entries (date_start, date_end);
+        CREATE INDEX IF NOT EXISTS idx_timeline_entries_date_end ON timeline_entries (date_end);
     """)
 
 
@@ -382,6 +384,9 @@ def dates_with_changes(cursor) -> set[date]:
 def get_json_for_date(cursor: sqlite3.Cursor, day: date) -> str | None:
     timeline_date = to_db_datetime(day)
     entry_rows = cursor.execute(
+        # UNION ALL instead of OR so SQLite can use a separate index per branch:
+        # idx_timeline_entries_dates for entries starting on this day,
+        # idx_timeline_entries_date_end for multi-day/open-ended entries spanning it.
         """
         SELECT
             entries.file_path,
@@ -392,9 +397,23 @@ def get_json_for_date(cursor: sqlite3.Cursor, day: date) -> str | None:
             entries.entry_data
         FROM timeline_entries entries
         INNER JOIN timeline_files files ON entries.file_path = files.file_path
-        WHERE (entries.date_start >= ? AND entries.date_start < datetime(?, '+1 day'))
-           OR (entries.date_start < ? AND (entries.date_end IS NULL OR entries.date_end >= ?))
-        ORDER BY entries.date_start
+        WHERE entries.date_start >= ? AND entries.date_start < datetime(?, '+1 day')
+
+        UNION ALL
+
+        SELECT
+            entries.file_path,
+            files.checksum,
+            entries.entry_type,
+            entries.date_start,
+            entries.date_end,
+            entries.entry_data
+        FROM timeline_entries entries
+        INNER JOIN timeline_files files ON entries.file_path = files.file_path
+        WHERE entries.date_start < ?
+          AND (entries.date_end IS NULL OR entries.date_end >= ?)
+
+        ORDER BY date_start
         """,
         (timeline_date, timeline_date, timeline_date, timeline_date),
     ).fetchall()
@@ -410,7 +429,7 @@ def get_json_for_date(cursor: sqlite3.Cursor, day: date) -> str | None:
             else "null"
         )
         json_parts.append(
-            f'{{"file_path":{json.dumps(entry_row[0])},'
+            f'{{"file_name":{json.dumps(Path(entry_row[0]).name)},'
             f'"checksum":{json.dumps(entry_row[1])},'
             f'"entry_type":{json.dumps(entry_row[2])},'
             f'"date_start":"{datetime_from_db(entry_row[3]).isoformat()}",'
