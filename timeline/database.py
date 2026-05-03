@@ -38,6 +38,10 @@ def datetime_from_db(date: datetime) -> datetime:
     return date.replace(tzinfo=timezone.utc).astimezone()  # Local timezone
 
 
+def to_json_date(dt: datetime) -> str:
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def days_in_range(start: datetime, end: datetime) -> Iterable[date]:
     date_start = start.date()
     days_count = (end.date() - date_start).days + 1
@@ -424,7 +428,7 @@ def get_json_for_date(cursor: sqlite3.Cursor, day: date) -> str | None:
     json_parts = []
     for entry_row in entry_rows:
         date_end = (
-            f'"{datetime_from_db(entry_row[4]).isoformat()}"'
+            f'"{to_json_date(datetime_from_db(entry_row[4]))}"'
             if entry_row[4]
             else "null"
         )
@@ -432,7 +436,7 @@ def get_json_for_date(cursor: sqlite3.Cursor, day: date) -> str | None:
             f'{{"file_name":{json.dumps(Path(entry_row[0]).name)},'
             f'"checksum":{json.dumps(entry_row[1])},'
             f'"entry_type":{json.dumps(entry_row[2])},'
-            f'"date_start":"{datetime_from_db(entry_row[3]).isoformat()}",'
+            f'"date_start":"{to_json_date(datetime_from_db(entry_row[3]))}",'
             f'"date_end":{date_end},'
             f'"data":{entry_row[5]}}}'
         )
