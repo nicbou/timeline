@@ -5,29 +5,29 @@ from pathlib import Path
 
 
 class EntryType(Enum):
-    IMAGE = 'image'
-    VIDEO = 'video'
-    TEXT = 'text'
-    HTML = 'html'
-    PDF = 'pdf'
+    IMAGE = "image"
+    VIDEO = "video"
+    TEXT = "text"
+    HTML = "html"
+    PDF = "pdf"
 
-    MESSAGE = 'message'
-    EVENT = 'event'
-    DIARY = 'diary'
+    MESSAGE = "message"
+    EVENT = "event"
+    DIARY = "diary"
 
-    SEARCH = 'search'
-    BROWSING_HISTORY = 'browse'
-    WATCHED_CONTENT = 'watch'
+    SEARCH = "search"
+    BROWSING_HISTORY = "browse"
+    WATCHED_CONTENT = "watch"
 
-    COMMIT = 'commit'
+    COMMIT = "commit"
 
-    BALANCE = 'balance'
-    TRANSACTION = 'transaction'
+    BALANCE = "balance"
+    TRANSACTION = "transaction"
 
-    POST = 'post'
-    COMMENT = 'comment'
+    POST = "post"
+    COMMENT = "comment"
 
-    GEOLOCATION = 'geolocation'
+    GEOLOCATION = "geolocation"
 
 
 @dataclass
@@ -41,19 +41,19 @@ class TimelineEntry:
 
     def to_json_dict(self):
         return {
-            'file_path': str(self.file_path),
-            'checksum': self.checksum,
-            'entry_type': self.entry_type.value,
-            'date_start': self.date_start.isoformat(),
-            'date_end': self.date_end.isoformat() if self.date_end else None,
-            'data': self.data,
+            "file_path": str(self.file_path),
+            "checksum": self.checksum,
+            "entry_type": self.entry_type.value,
+            "date_start": self.date_start.isoformat(),
+            "date_end": self.date_end.isoformat() if self.date_end else None,
+            "data": self.data,
         }
 
 
 @dataclass(frozen=True)
 class TimelineFile:
     file_path: Path
-    checksum: str
+    checksum: str | None
     date_added: datetime
     file_mtime: datetime
     size: int

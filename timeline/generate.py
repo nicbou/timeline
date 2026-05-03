@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
-from importlib.resources import files
+from importlib.resources import as_file, files
 from itertools import chain
 from pathlib import Path
 from timeline.file_processors.balance import process_balance_list
@@ -48,7 +48,7 @@ def get_timeline_files_in_paths(
 
 def process_timeline_files(
     cursor, input_paths, includerules, ignorerules, metadata_root: Path
-) -> int:
+):
     logger.info("Updating file list")
     db.create_database(cursor)
     db.update_file_database(
@@ -143,10 +143,10 @@ def generate_daily_entry_lists(cursor, output_path: Path):
 
 
 class DecimalEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Decimal):
-            return str(obj)  # Or float(obj) if you prefer float representation
-        return super(DecimalEncoder, self).default(obj)
+    def default(self, o):
+        if isinstance(o, Decimal):
+            return str(o)  # Or float(obj) if you prefer float representation
+        return super(DecimalEncoder, self).default(o)
 
 
 def generate_financial_report(cursor, output_path: Path):
@@ -221,7 +221,8 @@ def generate(
     )
     connection.commit()
 
-    templates_root = files("timeline") / "templates"
+    with as_file(files("timeline")) as path:
+        templates_root = path / "templates"
 
     # Copy frontend code and assets
     for file in get_files_in_paths(

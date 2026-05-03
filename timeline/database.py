@@ -9,10 +9,9 @@ import sqlite3
 
 def get_connection(db_path: Path):
     connection = sqlite3.connect(
-        db_path,
-        detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+        db_path, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
     )
-    connection.execute('PRAGMA foreign_keys = ON')
+    connection.execute("PRAGMA foreign_keys = ON")
     return connection
 
 
@@ -21,22 +20,20 @@ def db_date(date: datetime) -> datetime:
     Converts a timezone-aware datetime to UTC and removes timezone information.
     Sqlite does not support timezones properly.
     """
-    return date.astimezone(timezone.utc).replace(tzinfo=None) if date else None
+    return date.astimezone(timezone.utc).replace(tzinfo=None)
 
 
 def date_from_db(date: datetime) -> datetime:
     """
     Converts a date from the database into a timezone-aware datetime object.
     """
-    return date.replace(tzinfo=timezone.utc).astimezone() if date else None  # Local timezone
+    return date.replace(tzinfo=timezone.utc).astimezone()  # Local timezone
 
 
 def days_in_range(start: datetime, end: datetime) -> Iterable[date]:
     date_start = start.date()
     days_count = (end.date() - date_start).days + 1
-    return [
-        date_start + timedelta(days=x) for x in range(days_count)
-    ]
+    return [date_start + timedelta(days=x) for x in range(days_count)]
 
 
 def clear_table(cursor, table_name):
@@ -45,7 +42,7 @@ def clear_table(cursor, table_name):
 
 def create_found_files_table(cursor):
     # All files currently found on the filesystem
-    cursor.execute('''
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS found_files (
             file_path TEXT PRIMARY KEY NOT NULL,
             size INTEGER,
@@ -53,12 +50,12 @@ def create_found_files_table(cursor):
             file_mtime TIMESTAMP,
             checksum TEXT
         );
-    ''')
+    """)
 
 
 def create_timeline_files_table(cursor):
     # All files currently included on the timeline
-    cursor.execute('''
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS timeline_files (
             file_path TEXT PRIMARY KEY NOT NULL,
             size INTEGER,
@@ -67,12 +64,12 @@ def create_timeline_files_table(cursor):
             file_mtime TIMESTAMP,
             checksum TEXT
         );
-    ''')
+    """)
 
 
 def create_timeline_entries_table(cursor):
     # All entries on the timeline
-    cursor.execute('''
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS timeline_entries (
             file_path TEXT NOT NULL REFERENCES timeline_files (file_path) ON DELETE CASCADE,
             entry_type TEXT NOT NULL,
@@ -80,18 +77,18 @@ def create_timeline_entries_table(cursor):
             date_end TIMESTAMP,
             entry_data TEXT NOT NULL
         );
-    ''')
+    """)
 
 
 def create_dates_with_deleted_entries_table(cursor):
     # All days where a timeline entry was deleted, and the date of the last
     # deletion.
-    cursor.execute('''
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS dates_with_deleted_entries (
             timeline_date TIMESTAMP PRIMARY KEY NOT NULL,
             date_last_deletion TIMESTAMP NOT NULL
         );
-    ''')
+    """)
 
 
 def create_database(cursor):
@@ -108,7 +105,7 @@ def add_found_files(cursor, files: Iterable[TimelineFile]):
     The files are added to the temporary found_files table.
     """
     cursor.executemany(
-        '''
+        """
         INSERT INTO found_files (
             file_path,
             checksum,
@@ -117,7 +114,7 @@ def add_found_files(cursor, files: Iterable[TimelineFile]):
             size
         )
         VALUES (?, ?, ?, ?, ?)
-        ''',
+        """,
         [
             (
                 str(file.file_path),
@@ -137,7 +134,7 @@ def apply_cached_checksums_to_found_files(cursor):
     table. This is faster than recalculating the checksum for files that have
     not changed since the last pass.
     """
-    cursor.execute('''
+    cursor.execute("""
         UPDATE found_files
         SET checksum = timeline.checksum
         FROM (
@@ -150,7 +147,7 @@ def apply_cached_checksums_to_found_files(cursor):
             AND found_files.file_path=timeline.file_path
             AND found_files.size=timeline.size
             AND found_files.file_mtime=timeline.file_mtime
-    ''')
+    """)
 
 
 def fill_missing_found_file_checksums(cursor):
@@ -158,23 +155,23 @@ def fill_missing_found_file_checksums(cursor):
     Calculate the checksum for all files in the found_files table that don't
     have a checksum set.
     """
-    cursor.execute('''
+    cursor.execute("""
         SELECT file_path FROM found_files WHERE checksum IS NULL
-    ''')
+    """)
 
     cursor.executemany(
-        '''
+        """
         UPDATE found_files
         SET checksum = :checksum
         WHERE file_path = :file_path
-        ''',
+        """,
         [
             {
-                'checksum': get_checksum(Path(row[0])),
-                'file_path': row[0],
+                "checksum": get_checksum(Path(row[0])),
+                "file_path": row[0],
             }
             for row in cursor.fetchall()
-        ]
+        ],
     )
 
 
@@ -188,25 +185,25 @@ def commit_found_files(cursor):
     """
 
     # Select timeline_files that no longer exist in the list of found_files
-    cursor.executescript('''
+    cursor.executescript("""
         DROP VIEW IF EXISTS existing_files_to_preserve;
         CREATE VIEW existing_files_to_preserve AS
             SELECT timeline.file_path AS file_path FROM timeline_files timeline
             INNER JOIN found_files found
                 ON timeline.file_path = found.file_path
                 AND timeline.checksum = found.checksum
-    ''')
-    cursor.executescript('''
+    """)
+    cursor.executescript("""
         DROP VIEW IF EXISTS timeline_files_to_delete;
         CREATE VIEW timeline_files_to_delete AS
             SELECT file_path FROM timeline_files
             WHERE file_path NOT IN existing_files_to_preserve
-    ''')
+    """)
 
     # Select a list of entries to be deleted
-    cursor.execute('''
+    cursor.execute("""
         SELECT date_start, date_end FROM timeline_entries WHERE file_path IN timeline_files_to_delete
-    ''')
+    """)
 
     # Update the table of dates with deleted entries
     now = datetime.now()
@@ -214,11 +211,12 @@ def commit_found_files(cursor):
     for row in cursor.fetchall():
         date_start = date_from_db(row[0])
         date_end = date_from_db(row[1]) if row[1] else date_start
+
         for day in days_in_range(date_start, date_end):
             dates_with_deleted_entries[day] = now
 
     cursor.executemany(
-        '''
+        """
         INSERT INTO dates_with_deleted_entries (
             timeline_date, date_last_deletion
         )
@@ -227,23 +225,23 @@ def commit_found_files(cursor):
             SET
                 timeline_date = excluded.timeline_date,
                 date_last_deletion = date_last_deletion
-        ''',
+        """,
         [
             (
                 db_date(datetime.combine(timeline_date, datetime.min.time())),
                 db_date(date_last_deletion),
             )
             for timeline_date, date_last_deletion in dates_with_deleted_entries.items()
-        ]
+        ],
     )
 
     # Delete the old timeline_files
-    cursor.execute('''
+    cursor.execute("""
         DELETE FROM timeline_files WHERE file_path IN timeline_files_to_delete
-    ''')
+    """)
 
     # Insert the new timeline_files from found_files. Update existing rows when possible.
-    cursor.execute('''
+    cursor.execute("""
         INSERT INTO timeline_files (
             file_path,
             checksum,
@@ -259,9 +257,9 @@ def commit_found_files(cursor):
                 date_added = excluded.date_added,
                 file_mtime = excluded.file_mtime,
                 date_processed = date_processed
-    ''')
+    """)
 
-    clear_table(cursor, 'found_files')
+    clear_table(cursor, "found_files")
 
 
 def update_file_database(cursor, timeline_files: Iterable[TimelineFile]):
@@ -269,7 +267,7 @@ def update_file_database(cursor, timeline_files: Iterable[TimelineFile]):
     Syncs the list of files in the database with the actual list of files on the
     filesystem. The result is an up-to-date timeline_files table.
     """
-    clear_table(cursor, 'found_files')
+    clear_table(cursor, "found_files")
     add_found_files(cursor, timeline_files)
     apply_cached_checksums_to_found_files(cursor)
     fill_missing_found_file_checksums(cursor)
@@ -281,7 +279,7 @@ def get_unprocessed_timeline_files(cursor) -> Iterable[TimelineFile]:
     Returns a list of unprocessed files. These are files for which entries,
     thumbnails, previews and other metadata was not yet generated.
     """
-    cursor.execute('''
+    cursor.execute("""
         SELECT
             file_path,
             checksum,
@@ -290,20 +288,20 @@ def get_unprocessed_timeline_files(cursor) -> Iterable[TimelineFile]:
             size,
             date_processed
         FROM timeline_files WHERE date_processed IS NULL
-    ''')
+    """)
     for row in cursor.fetchall():
         yield TimelineFile(
             file_path=Path(row[0]),
             checksum=row[1],
             date_added=date_from_db(row[2]),
             file_mtime=date_from_db(row[3]),
-            size=row[4]
+            size=row[4],
         )
 
 
 def add_timeline_entries(cursor, entries: Iterable[TimelineEntry]):
     cursor.executemany(
-        '''
+        """
         INSERT INTO timeline_entries (
             file_path,
             entry_type,
@@ -312,14 +310,14 @@ def add_timeline_entries(cursor, entries: Iterable[TimelineEntry]):
             entry_data
         )
         VALUES (?, ?, ?, ?, ?)
-        ''',
+        """,
         [
             (
                 str(entry.file_path),
                 entry.entry_type.value,
                 db_date(entry.date_start),
                 db_date(entry.date_end),
-                json.dumps(entry.data)
+                json.dumps(entry.data),
             )
             for entry in entries
         ],
@@ -341,11 +339,11 @@ def dates_with_changes(cursor) -> Tuple[Dict[datetime, datetime], Set[datetime]]
     days_to_delete = set()
 
     # Days with entries
-    cursor.execute('''
+    cursor.execute("""
         SELECT entries.date_start, entries.date_end, files.date_processed FROM timeline_entries entries
         JOIN timeline_files files ON entries.file_path=files.file_path
         ORDER BY date_start
-    ''')
+    """)
     for entry_row in cursor.fetchall():
         date_start = date_from_db(entry_row[0])
         date_end = date_from_db(entry_row[1]) if entry_row[1] else date_start
@@ -357,10 +355,10 @@ def dates_with_changes(cursor) -> Tuple[Dict[datetime, datetime], Set[datetime]]
                 days_to_update[day] = date_processed
 
     # Days with deleted entries
-    cursor.execute('''
+    cursor.execute("""
         SELECT timeline_date, date_last_deletion
         FROM dates_with_deleted_entries
-    ''')
+    """)
     for deleted_entry_row in cursor.fetchall():
         day = date_from_db(deleted_entry_row[0]).date()
         last_deletion_date = date_from_db(deleted_entry_row[1])
@@ -376,9 +374,11 @@ def dates_with_changes(cursor) -> Tuple[Dict[datetime, datetime], Set[datetime]]
 
 
 def get_entries_for_date(cursor, timeline_date: date):
-    tz_aware_timeline_date = datetime(timeline_date.year, timeline_date.month, timeline_date.day).astimezone()
+    tz_aware_timeline_date = datetime(
+        timeline_date.year, timeline_date.month, timeline_date.day
+    ).astimezone()
     cursor.execute(
-        '''
+        """
             SELECT
                 entries.file_path,
                 files.checksum,
@@ -392,10 +392,10 @@ def get_entries_for_date(cursor, timeline_date: date):
             WHERE
                 (date_start>=:start AND date_start<:end)
                 OR (date_start<:start AND date_end>=:start)
-        ''',
+        """,
         {
-            'start': db_date(tz_aware_timeline_date),
-            'end': db_date(tz_aware_timeline_date + timedelta(days=1)),
+            "start": db_date(tz_aware_timeline_date),
+            "end": db_date(tz_aware_timeline_date + timedelta(days=1)),
         },
     )
     for row in cursor.fetchall():
@@ -411,7 +411,7 @@ def get_entries_for_date(cursor, timeline_date: date):
 
 def get_entries_by_type(cursor, entry_type: EntryType):
     cursor.execute(
-        '''
+        """
             SELECT
                 entries.file_path,
                 files.checksum,
@@ -424,10 +424,8 @@ def get_entries_by_type(cursor, entry_type: EntryType):
                 ON entries.file_path = files.file_path
             WHERE
                 entry_type=:type
-        ''',
-        {
-            'type': entry_type.value
-        },
+        """,
+        {"type": entry_type.value},
     )
     for row in cursor.fetchall():
         yield TimelineEntry(
@@ -443,7 +441,9 @@ def get_entries_by_type(cursor, entry_type: EntryType):
 def delete_timeline_entries(cursor, file_path: Path):
     cursor.execute(
         "DELETE FROM timeline_entries WHERE file_path=?",
-        [str(file_path), ]
+        [
+            str(file_path),
+        ],
     )
 
 
@@ -453,5 +453,5 @@ def mark_timeline_file_as_processed(cursor, file_path: Path):
         [
             db_date(datetime.now()),
             str(file_path),
-        ]
+        ],
     )
