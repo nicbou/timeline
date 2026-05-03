@@ -10,7 +10,7 @@ from timeline.database import (
     update_timeline_entries_for_file,
     mark_timeline_file_as_processed,
     dates_with_changes,
-    get_entries_for_date,
+    get_json_for_changed_dates,
     to_db_datetime,
 )
 from timeline.filesystem import get_checksum
@@ -457,7 +457,7 @@ def test_dates_with_changes(cursor, tmp_path):
 
     days_to_update = dates_with_changes(cursor)
 
-    assert set(days_to_update.keys()) == {
+    assert set(days_to_update) == {
         date(2023, 7, 1),
         date(2023, 7, 2),
         date(2023, 7, 3),
@@ -467,10 +467,6 @@ def test_dates_with_changes(cursor, tmp_path):
         date(2023, 7, 9),
         date(2023, 7, 10),
     }
-    # Timestamps should be recent (within the last few seconds)
-    now = datetime.now().astimezone()
-    for ts in days_to_update.values():
-        assert (now - ts).total_seconds() < 5
 
 
 def test_dates_with_changes_deleted_entries(cursor, tmp_path):
@@ -506,9 +502,6 @@ def test_dates_with_changes_deleted_entries(cursor, tmp_path):
 
     # Day 07-03 had a file_b entry deleted, but file_a's entry (07-01 to 07-04) still covers it
     assert date(2023, 7, 3) in days_to_update
-    assert datetime.timestamp(days_to_update[date(2023, 7, 3)]) == pytest.approx(
-        datetime.timestamp(datetime.now()), abs=5
-    )
 
     # Days only covered by file_b → no remaining entries → marked for deletion
     assert date(2023, 7, 7) in days_to_update
@@ -522,29 +515,56 @@ def test_dates_with_changes_deleted_entries(cursor, tmp_path):
     assert date(2023, 7, 4) not in days_to_update
 
 
-def test_get_entries_for_date(cursor, tmp_path):
-    found_files = fake_found_files(tmp_path)
+def test_get_json_for_changed_dates(cursor, tmp_path):
+    found_files = list(fake_found_files(tmp_path))
     timeline_entries = fake_timeline_entries(tmp_path)
     add_found_files(cursor, found_files)
     commit_found_files(cursor)
-    add_timeline_entries(cursor, timeline_entries)
 
-    assert list(get_entries_for_date(cursor, date(2023, 6, 30))) == []
+    file_a_entries = [
+        e for e in timeline_entries if e.file_path == tmp_path / "file_a.text"
+    ]
+    file_b_entries = [
+        e for e in timeline_entries if e.file_path == tmp_path / "file_b.text"
+    ]
+    update_timeline_entries_for_file(cursor, tmp_path / "file_a.text", file_a_entries)
+    update_timeline_entries_for_file(cursor, tmp_path / "file_b.text", file_b_entries)
 
-    entries_2023_07_01 = list(get_entries_for_date(cursor, date(2023, 7, 1)))
-    assert len(entries_2023_07_01) == 1
-    assert entries_2023_07_01[0].date_start == timeline_entries[0].date_start
-    assert entries_2023_07_01[0].date_end == timeline_entries[0].date_end
+    results = dict(get_json_for_changed_dates(cursor))
 
-    # Same entry spread over two days
-    entries_2023_07_09 = list(get_entries_for_date(cursor, date(2023, 7, 9)))
-    assert len(entries_2023_07_09) == 1
-    assert entries_2023_07_09[0].date_start == timeline_entries[2].date_start
-    assert entries_2023_07_09[0].date_end == timeline_entries[2].date_end
+    # Only days with entries are yielded
+    assert date(2023, 6, 30) not in results
+    assert date(2023, 7, 11) not in results
 
-    entries_2023_07_10 = list(get_entries_for_date(cursor, date(2023, 7, 10)))
-    assert len(entries_2023_07_10) == 1
-    assert entries_2023_07_10[0].date_start == timeline_entries[2].date_start
-    assert entries_2023_07_10[0].date_end == timeline_entries[2].date_end
+    # Each value is valid JSON with an "entries" key
+    for day, json_str in results.items():
+        parsed = json.loads(json_str)
+        assert "entries" in parsed
+        assert len(parsed["entries"]) > 0
 
-    assert list(get_entries_for_date(cursor, date(2023, 7, 11))) == []
+    # file_a entry spans 07-01 to 07-04: appears in all four days
+    for d in [date(2023, 7, 1), date(2023, 7, 2), date(2023, 7, 3), date(2023, 7, 4)]:
+        assert d in results
+        entries = json.loads(results[d])["entries"]
+        assert any(e["entry_type"] == EntryType.IMAGE.value for e in entries)
+
+    # file_b has two entries: 07-03 (single day) and 07-07 to 07-10
+    assert date(2023, 7, 3) in results
+    entries_07_03 = json.loads(results[date(2023, 7, 3)])["entries"]
+    assert len(entries_07_03) == 2  # file_a multi-day + file_b single-day
+
+    for d in [date(2023, 7, 7), date(2023, 7, 8), date(2023, 7, 9), date(2023, 7, 10)]:
+        assert d in results
+        entries = json.loads(results[d])["entries"]
+        assert any(e["entry_type"] == EntryType.HTML.value for e in entries)
+
+    # Entries include all expected fields
+    sample = json.loads(results[date(2023, 7, 1)])["entries"][0]
+    assert {
+        "file_path",
+        "checksum",
+        "entry_type",
+        "date_start",
+        "date_end",
+        "data",
+    } <= sample.keys()

@@ -17,6 +17,7 @@ from timeline.file_processors.kontist import process_kontist_transactions
 from timeline.file_processors.n26 import process_n26_transactions
 from timeline.file_processors.pdf import process_pdf
 from timeline.file_processors.search import process_search_logs
+from timeline.file_processors.reddit import process_reddit
 from timeline.file_processors.text import process_text, process_markdown
 from timeline.file_processors.video import process_video, can_process_videos
 from timeline.filesystem import get_files_in_paths
@@ -68,6 +69,7 @@ def process_timeline_files(
         process_markdown,
         process_n26_transactions,
         process_pdf,
+        process_reddit,
         process_search_logs,
         process_text,
     ]
@@ -107,27 +109,24 @@ def process_timeline_files(
 
 
 def generate_daily_entry_lists(cursor, output_path: Path):
-    # Generate entries .json for each day
-    # Only generate missing days or days that have changes to speed things up
     logger.info("Generating entry lists by day")
 
     output_path.mkdir(parents=True, exist_ok=True)
 
     days_to_update = db.dates_with_changes(cursor)
-
     days_updated = 0
     days_deleted = 0
 
-    for day, date_last_changed in days_to_update.items():
+    days_with_entries = set()
+    for day, json_str in db.get_json_for_changed_dates(cursor):
+        days_with_entries.add(day)
         day_json_path = output_path / f"{day.strftime('%Y-%m-%d')}.json"
+        day_json_path.write_text(json_str)
+        days_updated += 1
 
-        entries = list(e.to_json_dict() for e in db.get_entries_for_date(cursor, day))
-        if entries:
-            day_json_path.write_text(json.dumps({"entries": entries}))
-            days_updated += 1
-        else:
-            day_json_path.unlink(missing_ok=True)
-            days_deleted += 1
+    for day in days_to_update - days_with_entries:
+        (output_path / f"{day.strftime('%Y-%m-%d')}.json").unlink(missing_ok=True)
+        days_deleted += 1
 
     logger.info(
         f"Generated entry lists for {len(days_to_update)} days: updated {days_updated}, removed {days_deleted}"

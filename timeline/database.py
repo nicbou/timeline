@@ -2,7 +2,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from timeline.filesystem import get_checksum
 from timeline.models import TimelineFile, TimelineEntry, EntryType
-from typing import Iterable
+from typing import Generator, Iterable
 import json
 import sqlite3
 
@@ -370,7 +370,7 @@ def update_timeline_entries_for_file(
     )
 
 
-def dates_with_changes(cursor) -> dict[date, datetime]:
+def dates_with_changes(cursor) -> set[date]:
     """
     Returns a tuple with two values:
         1. days_to_update (dict):
@@ -380,47 +380,62 @@ def dates_with_changes(cursor) -> dict[date, datetime]:
             Dates that have no entries left, because they were all deleted.
     """
     return {
-        datetime_from_db(row[0]).date(): datetime.now().astimezone()
+        datetime_from_db(row[0]).date()
         for row in cursor.execute(
             "SELECT timeline_date FROM dates_with_changes"
         ).fetchall()
     }
 
 
-def get_entries_for_date(cursor, timeline_date: date):
-    tz_aware_timeline_date = datetime(
-        timeline_date.year, timeline_date.month, timeline_date.day
-    ).astimezone()
-    cursor.execute(
+def get_json_for_changed_dates(cursor: sqlite3.Cursor) -> Generator[tuple[date, str], None, None]:
+    """
+    Streams rows from the DB ordered by date, so only one day is in memory at a time.
+    """
+    current_day = None
+    current_entries = []
+
+    def day_and_json():
+        return current_day, '{"entries":[' + ",".join(current_entries) + "]}"
+
+    for row in cursor.execute(
         """
-            SELECT
-                entries.file_path,
-                files.checksum,
-                entry_type,
-                date_start,
-                date_end,
-                entry_data
-            FROM timeline_entries entries
-            INNER JOIN timeline_files files
-                ON entries.file_path = files.file_path
-            WHERE
-                (date_start>=:start AND date_start<:end)
-                OR (date_start<:start AND date_end>=:start)
-        """,
-        {
-            "start": to_db_datetime(tz_aware_timeline_date),
-            "end": to_db_datetime(tz_aware_timeline_date + timedelta(days=1)),
-        },
-    )
-    for row in cursor.fetchall():
-        yield TimelineEntry(
-            file_path=Path(row[0]),
-            checksum=row[1],
-            entry_type=EntryType(row[2]),
-            date_start=datetime_from_db(row[3]),
-            date_end=datetime_from_db(row[4]) if row[4] else None,
-            data=json.loads(row[5]),
+        SELECT
+            changes.timeline_date,
+            entries.file_path,
+            files.checksum,
+            entries.entry_type,
+            entries.date_start,
+            entries.date_end,
+            entries.entry_data
+        FROM dates_with_changes changes
+        INNER JOIN timeline_entries entries ON (
+            (entries.date_start >= changes.timeline_date
+                AND entries.date_start < datetime(changes.timeline_date, '+1 day'))
+            OR (entries.date_start < changes.timeline_date
+                AND (entries.date_end IS NULL OR entries.date_end >= changes.timeline_date))
         )
+        INNER JOIN timeline_files files ON entries.file_path = files.file_path
+        ORDER BY changes.timeline_date, entries.date_start
+        """
+    ):
+        day = datetime_from_db(row[0]).date()
+        if day != current_day:
+            if current_day is not None:
+                yield day_and_json()
+            current_day = day
+            current_entries = []
+        date_end = f'"{datetime_from_db(row[5]).isoformat()}"' if row[5] else "null"
+        current_entries.append(
+            f'{{"file_path":{json.dumps(row[1])},'
+            f'"checksum":{json.dumps(row[2])},'
+            f'"entry_type":{json.dumps(row[3])},'
+            f'"date_start":"{datetime_from_db(row[4]).isoformat()}",'
+            f'"date_end":{date_end},'
+            f'"data":{row[6]}}}'
+        )
+
+    if current_day is not None:
+        yield day_and_json()
 
 
 def get_entries_by_type(cursor, entry_type: EntryType):
