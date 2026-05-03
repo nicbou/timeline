@@ -12,17 +12,20 @@ def process_n26_transactions(file: TimelineFile, metadata_root: Path):
     for line in csv.DictReader(codecs.iterdecode(file.file_path.open('rb'), 'utf-8'), delimiter=',', quotechar='"'):
         # No timezone attached. Assume current system timezone.
         transaction_date = datetime.strptime(line.get('Booking Date') or line.get('Date'), '%Y-%m-%d').astimezone()
+        data = {
+            'account': 'N26',
+            'amount': line['Amount (EUR)'],  # String, not number
+        }
+        if other_party := line.get('Partner Name') or line.get('Payee'):
+            data['otherParty'] = other_party
         description = line.get('Payment Reference') or line.get('Payment reference')
+        if description and description != '-':
+            data['description'] = description
         yield TimelineEntry(
             file_path=file.file_path,
             checksum=file.checksum,
             entry_type=EntryType.TRANSACTION,
             date_start=transaction_date,
             date_end=None,
-            data={
-                'account': 'N26',
-                'amount': line['Amount (EUR)'],  # String, not number
-                'otherParty': line.get('Partner Name') or line.get('Payee'),
-                'description': '' if description == '-' else description,
-            }
+            data=data,
         )

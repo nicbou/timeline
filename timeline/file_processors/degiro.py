@@ -17,16 +17,19 @@ def process_degiro_transactions(file: TimelineFile, metadata_root: Path):
         quantity = abs(int(line['Anzahl'].strip()))
         buy_or_sell = "Sell" if line['Anzahl'].startswith('-') else "Buy"
 
+        description = f"{buy_or_sell} {quantity} {line['Produkt'].strip()} shares at {share_price:,.2f} per share"
+        data = {
+            'account': 'Degiro',
+            'amount': line['Gesamt'].strip(),  # String, not number
+            'otherParty': 'Degiro',
+        }
+        if description:
+            data['description'] = description
         yield TimelineEntry(
             file_path=file.file_path,
             checksum=file.checksum,
             entry_type=EntryType.TRANSACTION,
             date_start=transaction_date,
             date_end=None,
-            data={
-                'account': 'Degiro',
-                'amount': line['Gesamt'].strip(),  # String, not number
-                'otherParty': 'Degiro',
-                'description': f"{buy_or_sell} {quantity} {line['Produkt'].strip()} shares at {share_price:,.2f} per share",
-            }
+            data=data,
         )

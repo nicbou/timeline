@@ -12,16 +12,19 @@ def process_kontist_transactions(file: TimelineFile, metadata_root: Path):
     for line in csv.DictReader(codecs.iterdecode(file.file_path.open('rb'), 'utf-8'), delimiter=';', quotechar='"'):
         # No timezone attached. Assume current system timezone.
         transaction_date = datetime.strptime(line['Wertstellungsdatum'], '%Y-%m-%d').astimezone()
+        data = {
+            'account': 'Kontist',
+            'amount': line['Betrag'].replace(',', '.'),  # String, not number
+        }
+        if other_party := line['Empfänger']:
+            data['otherParty'] = other_party
+        if description := line['Verwendungszweck']:
+            data['description'] = description
         yield TimelineEntry(
             file_path=file.file_path,
             checksum=file.checksum,
             entry_type=EntryType.TRANSACTION,
             date_start=transaction_date,
             date_end=None,
-            data={
-                'account': 'Kontist',
-                'amount': line['Betrag'].replace(',', '.'),  # String, not number
-                'otherParty': line['Empfänger'],
-                'description': line['Verwendungszweck'],
-            }
+            data=data,
         )
