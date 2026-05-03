@@ -111,25 +111,22 @@ def process_timeline_files(
 def generate_daily_entry_lists(cursor, output_path: Path):
     logger.info("Generating entry lists by day")
 
-    output_path.mkdir(parents=True, exist_ok=True)
-
-    days_to_update = db.dates_with_changes(cursor)
     days_updated = 0
     days_deleted = 0
 
-    days_with_entries = set()
-    for day, json_str in db.get_json_for_changed_dates(cursor):
-        days_with_entries.add(day)
-        day_json_path = output_path / f"{day.strftime('%Y-%m-%d')}.json"
-        day_json_path.write_text(json_str)
-        days_updated += 1
+    output_path.mkdir(parents=True, exist_ok=True)
 
-    for day in days_to_update - days_with_entries:
-        (output_path / f"{day.strftime('%Y-%m-%d')}.json").unlink(missing_ok=True)
-        days_deleted += 1
+    for day in db.dates_with_changes(cursor):
+        day_json_path = output_path / f"{day.strftime('%Y-%m-%d')}.json"
+        if json_str := db.get_json_for_date(cursor, day):
+            day_json_path.write_text(json_str)
+            days_updated += 1
+        else:  # No entries
+            day_json_path.unlink(missing_ok=True)
+            days_deleted += 1
 
     logger.info(
-        f"Generated entry lists for {len(days_to_update)} days: updated {days_updated}, removed {days_deleted}"
+        f"Generated entry lists for {days_updated + days_deleted} days: updated {days_updated}, removed {days_deleted}"
     )
 
 

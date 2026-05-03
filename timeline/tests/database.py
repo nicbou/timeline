@@ -10,7 +10,7 @@ from timeline.database import (
     update_timeline_entries_for_file,
     mark_timeline_file_as_processed,
     dates_with_changes,
-    get_json_for_changed_dates,
+    get_json_for_date,
     to_db_datetime,
 )
 from timeline.filesystem import get_checksum
@@ -515,7 +515,7 @@ def test_dates_with_changes_deleted_entries(cursor, tmp_path):
     assert date(2023, 7, 4) not in days_to_update
 
 
-def test_get_json_for_changed_dates(cursor, tmp_path):
+def test_get_json_for_date(cursor, tmp_path):
     found_files = list(fake_found_files(tmp_path))
     timeline_entries = fake_timeline_entries(tmp_path)
     add_found_files(cursor, found_files)
@@ -530,36 +530,32 @@ def test_get_json_for_changed_dates(cursor, tmp_path):
     update_timeline_entries_for_file(cursor, tmp_path / "file_a.text", file_a_entries)
     update_timeline_entries_for_file(cursor, tmp_path / "file_b.text", file_b_entries)
 
-    results = dict(get_json_for_changed_dates(cursor))
+    # Days with no entries return None
+    assert get_json_for_date(cursor, date(2023, 6, 30)) is None
 
-    # Only days with entries are yielded
-    assert date(2023, 6, 30) not in results
-    assert date(2023, 7, 11) not in results
-
-    # Each value is valid JSON with an "entries" key
-    for day, json_str in results.items():
+    # Each result is valid JSON with an "entries" key
+    for d in [date(2023, 7, 1), date(2023, 7, 3), date(2023, 7, 7)]:
+        json_str = get_json_for_date(cursor, d)
+        assert json_str is not None
         parsed = json.loads(json_str)
         assert "entries" in parsed
         assert len(parsed["entries"]) > 0
 
     # file_a entry spans 07-01 to 07-04: appears in all four days
     for d in [date(2023, 7, 1), date(2023, 7, 2), date(2023, 7, 3), date(2023, 7, 4)]:
-        assert d in results
-        entries = json.loads(results[d])["entries"]
+        entries = json.loads(get_json_for_date(cursor, d))["entries"]
         assert any(e["entry_type"] == EntryType.IMAGE.value for e in entries)
 
     # file_b has two entries: 07-03 (single day) and 07-07 to 07-10
-    assert date(2023, 7, 3) in results
-    entries_07_03 = json.loads(results[date(2023, 7, 3)])["entries"]
+    entries_07_03 = json.loads(get_json_for_date(cursor, date(2023, 7, 3)))["entries"]
     assert len(entries_07_03) == 2  # file_a multi-day + file_b single-day
 
     for d in [date(2023, 7, 7), date(2023, 7, 8), date(2023, 7, 9), date(2023, 7, 10)]:
-        assert d in results
-        entries = json.loads(results[d])["entries"]
+        entries = json.loads(get_json_for_date(cursor, d))["entries"]
         assert any(e["entry_type"] == EntryType.HTML.value for e in entries)
 
     # Entries include all expected fields
-    sample = json.loads(results[date(2023, 7, 1)])["entries"][0]
+    sample = json.loads(get_json_for_date(cursor, date(2023, 7, 1)))["entries"][0]
     assert {
         "file_path",
         "checksum",
