@@ -25,10 +25,10 @@ export default Vue.component('event-entry', {
       return this.dateEnd && this.dateEnd > this.currentDate.endOf('day').milliseconds(0);
     },
     dateStart() {
-      return moment(this.entry.date_start);
+      return moment(this.entry.start);
     },
     dateEnd() {
-      return this.entry.date_end ? moment(this.entry.date_end) : null;
+      return this.entry.end ? moment(this.entry.end) : null;
     },
     dateEndPrint() {
       // Adds the missing second to the end date

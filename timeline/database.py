@@ -428,16 +428,16 @@ def get_json_for_date(cursor: sqlite3.Cursor, day: date) -> str | None:
     json_parts = []
     for entry_row in entry_rows:
         date_end = (
-            f'"{to_json_date(datetime_from_db(entry_row[4]))}"'
+            f',"end":"{to_json_date(datetime_from_db(entry_row[4]))}"'
             if entry_row[4]
-            else "null"
+            else ""
         )
         json_parts.append(
             f'{{"file_name":{json.dumps(Path(entry_row[0]).name)},'
             f'"checksum":{json.dumps(entry_row[1])},'
             f'"entry_type":{json.dumps(entry_row[2])},'
-            f'"date_start":"{to_json_date(datetime_from_db(entry_row[3]))}",'
-            f'"date_end":{date_end},'
+            f'"start":"{to_json_date(datetime_from_db(entry_row[3]))}"'
+            f'{date_end},'
             f'"data":{entry_row[5]}}}'
         )
     return '{"entries":[' + ",".join(json_parts) + "]}"

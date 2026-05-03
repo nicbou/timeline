@@ -12,7 +12,7 @@ export default Vue.component('image-entry', {
       }
     },
     time() {
-      return moment(this.entry.date_start).format('H:mm');
+      return moment(this.entry.start).format('H:mm');
     },
     cssBackground() {
       return `url("${this.imgSrc}")`;

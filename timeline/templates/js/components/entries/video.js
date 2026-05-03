@@ -12,7 +12,7 @@ export default Vue.component('video-entry', {
       }
     },
     time() {
-      return moment(this.entry.date_start).format('H:mm');
+      return moment(this.entry.start).format('H:mm');
     },
   },
   methods: {

@@ -4,7 +4,7 @@ export default Vue.component('search-entry', {
   props: ['entry'],
   computed: {
     time() {
-      return moment(this.entry.date_start).format('H:mm');
+      return moment(this.entry.start).format('H:mm');
     }
   },
   template: `

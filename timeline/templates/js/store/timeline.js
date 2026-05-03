@@ -11,7 +11,7 @@ export default {
   },
   mutations: {
     SET_ENTRIES(state, entries) {
-      state.entries = entries.sort((a, b) => (new Date(a.date_start)).getTime() - (new Date(b.date_start)).getTime());
+      state.entries = entries.sort((a, b) => (new Date(a.start)).getTime() - (new Date(b.start)).getTime());
     },
     SET_ENTRIES_REQUEST_PROMISE(state, promise) {
       state.entriesRequestPromise = promise;
