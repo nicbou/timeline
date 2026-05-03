@@ -98,47 +98,39 @@ def process_timeline_files(
         for post_process_function in timeline_post_processors:
             entry_generator = map(post_process_function, entry_generator)
 
-        db.delete_timeline_entries(cursor, file.file_path)
-        db.add_timeline_entries(cursor, entry_generator)
+        db.update_timeline_entries_for_file(
+            cursor, file.file_path, list(entry_generator)
+        )
         db.mark_timeline_file_as_processed(cursor, file.file_path)
 
     logger.info(f"Processed {new_file_count} new files")
 
 
 def generate_daily_entry_lists(cursor, output_path: Path):
-    logger.info("Generating entry lists by day")
     # Generate entries .json for each day
     # Only generate missing days or days that have changes to speed things up
+    logger.info("Generating entry lists by day")
+
     output_path.mkdir(parents=True, exist_ok=True)
 
-    days_to_update, days_to_delete = db.dates_with_changes(cursor)
+    days_to_update = db.dates_with_changes(cursor)
 
     days_updated = 0
+    days_deleted = 0
+
     for day, date_last_changed in days_to_update.items():
         day_json_path = output_path / f"{day.strftime('%Y-%m-%d')}.json"
 
-        if (
-            not day_json_path.exists()
-            or date_last_changed.timestamp() > day_json_path.stat().st_mtime
-        ):
+        entries = list(e.to_json_dict() for e in db.get_entries_for_date(cursor, day))
+        if entries:
+            day_json_path.write_text(json.dumps({"entries": entries}))
             days_updated += 1
-            with day_json_path.open("w") as json_file:
-                json.dump(
-                    {
-                        "entries": [
-                            entry.to_json_dict()
-                            for entry in db.get_entries_for_date(cursor, day)
-                        ],
-                    },
-                    json_file,
-                )
-
-    for day in days_to_delete:
-        day_json_path = output_path / f"{day.strftime('%Y-%m-%d')}.json"
-        day_json_path.unlink(missing_ok=True)
+        else:
+            day_json_path.unlink(missing_ok=True)
+            days_deleted += 1
 
     logger.info(
-        f"Generated entry lists for {len(days_to_update)} days: updated {days_updated}, removed {len(days_to_delete)}"
+        f"Generated entry lists for {len(days_to_update)} days: updated {days_updated}, removed {days_deleted}"
     )
 
 
