@@ -7,3 +7,6 @@ _.python.venv = { path = ".venv", create = true, uv_create_args = ["--seed"] }
 
 [hooks]
 enter = "uv pip install -e ."
+
+[tasks.test]
+run = "uv run pytest"
