@@ -401,7 +401,10 @@ def get_json_for_date(cursor: sqlite3.Cursor, day: date) -> str | None:
             entries.entry_data
         FROM timeline_entries entries
         INNER JOIN timeline_files files ON entries.file_path = files.file_path
-        WHERE entries.date_start >= ? AND entries.date_start < datetime(?, '+1 day')
+        WHERE
+            entries.date_end IS NULL
+            AND entries.date_start >= ?
+            AND entries.date_start < datetime(?, '+1 day')
 
         UNION ALL
 
@@ -414,8 +417,7 @@ def get_json_for_date(cursor: sqlite3.Cursor, day: date) -> str | None:
             entries.entry_data
         FROM timeline_entries entries
         INNER JOIN timeline_files files ON entries.file_path = files.file_path
-        WHERE entries.date_start < ?
-          AND (entries.date_end IS NULL OR entries.date_end >= ?)
+        WHERE entries.date_end >= ? AND entries.date_start <= ?
 
         ORDER BY date_start
         """,
@@ -437,7 +439,7 @@ def get_json_for_date(cursor: sqlite3.Cursor, day: date) -> str | None:
             f'"checksum":{json.dumps(entry_row[1])},'
             f'"entry_type":{json.dumps(entry_row[2])},'
             f'"start":"{to_json_date(datetime_from_db(entry_row[3]))}"'
-            f'{date_end},'
+            f"{date_end},"
             f'"data":{entry_row[5]}}}'
         )
     return '{"entries":[' + ",".join(json_parts) + "]}"
