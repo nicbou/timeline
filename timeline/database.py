@@ -418,7 +418,7 @@ def get_entries_for_date(cursor, timeline_date: date):
             checksum=row[1],
             entry_type=EntryType(row[2]),
             date_start=datetime_from_db(row[3]),
-            date_end=datetime_from_db(row[4]),
+            date_end=datetime_from_db(row[4]) if row[4] else None,
             data=json.loads(row[5]),
         )
 
@@ -447,7 +447,7 @@ def get_entries_by_type(cursor, entry_type: EntryType):
             checksum=row[1],
             entry_type=EntryType(row[2]),
             date_start=datetime_from_db(row[3]),
-            date_end=datetime_from_db(row[4]),
+            date_end=datetime_from_db(row[4]) if row[4] else None,
             data=json.loads(row[5]),
         )
 

@@ -33,10 +33,10 @@ class EntryType(Enum):
 @dataclass
 class TimelineEntry:
     file_path: Path
-    checksum: str
+    checksum: str | None
     entry_type: EntryType
     date_start: datetime
-    date_end: datetime
+    date_end: datetime | None
     data: dict
 
     def to_json_dict(self):
