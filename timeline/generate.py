@@ -9,7 +9,6 @@ from itertools import chain
 from pathlib import Path
 
 import reverse_geocode
-
 import timeline.database as db
 from timeline.file_processors.balance import process_balance_list
 from timeline.file_processors.calendar import process_calendar_db, process_icalendar
@@ -232,6 +231,11 @@ def generate_visited_countries_list(cursor, output_path: Path):
         if lat is None or lng is None:
             continue
 
+        # Skip points taken from an airplane; flying over Iceland doesn't count as being there
+        altitude = location.get("altitude")
+        if altitude is not None and altitude >= 5000:
+            continue
+
         # Reduce geolocation precision to store fewer points in memory
         rough_coordinates = (
             round(float(lat), 2),  # Neighbourhood-level precision
@@ -319,5 +323,7 @@ def generate(
 
     generate_daily_entry_lists(cursor, output_root / "entries")
     generate_financial_report(cursor, output_root / "entries" / "finances.json")
-    generate_visited_countries_list(cursor, output_root / "entries" / "visited-countries.json")
+    generate_visited_countries_list(
+        cursor, output_root / "entries" / "visited-countries.json"
+    )
     logger.info("Timeline generation done.")
