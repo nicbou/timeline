@@ -103,6 +103,9 @@ export default Vue.component('timeline', {
         :key="entry.key"
         v-for="entry in entries"
         v-if="!isLoading && componentType(entry.entry_type)"></component>
+      <footer class="timeline-footer">
+        <router-link :to="{ name: 'map' }">Visited countries</router-link>
+      </footer>
     </main>
   `
 });

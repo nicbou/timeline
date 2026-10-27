@@ -550,6 +550,14 @@ a{
             margin-bottom: 0;
         }
 
+.timeline-footer{
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-top: var(--m);
+    padding: var(--m) 0;
+    color: var(--c-text-light);
+}
+
 .country-map-page{
     position: relative;
     width: 100vw;
