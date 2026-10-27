@@ -1,12 +1,19 @@
-from datetime import datetime, timedelta
+import json
+import logging
+import shutil
+from collections.abc import Iterable
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from importlib.resources import as_file, files
 from itertools import chain
 from pathlib import Path
+
+import reverse_geocode
+
+import timeline.database as db
 from timeline.file_processors.balance import process_balance_list
-from timeline.file_processors.calendar import process_icalendar, process_calendar_db
+from timeline.file_processors.calendar import process_calendar_db, process_icalendar
 from timeline.file_processors.degiro import process_degiro_transactions
-from timeline.post_processors.geo import add_reverse_geolocation
 from timeline.file_processors.google_takeout import (
     process_google_browser_history,
     process_google_location_history,
@@ -16,18 +23,13 @@ from timeline.file_processors.image import process_image
 from timeline.file_processors.kontist import process_kontist_transactions
 from timeline.file_processors.n26 import process_n26_transactions
 from timeline.file_processors.pdf import process_pdf
-from timeline.file_processors.search import process_search_logs
 from timeline.file_processors.reddit import process_reddit
-from timeline.file_processors.text import process_text, process_markdown
-from timeline.file_processors.video import process_video, can_process_videos
+from timeline.file_processors.search import process_search_logs
+from timeline.file_processors.text import process_markdown, process_text
+from timeline.file_processors.video import can_process_videos, process_video
 from timeline.filesystem import get_files_in_paths
-from timeline.models import TimelineFile, EntryType
-from typing import Iterable
-import json
-import logging
-import shutil
-import timeline.database as db
-
+from timeline.models import EntryType, TimelineFile
+from timeline.post_processors.geo import add_reverse_geolocation
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +83,7 @@ def process_timeline_files(
     if can_process_videos():
         timeline_file_processors.append(process_video)
     else:
-        logging.warning("ffmpeg is not installed. Videos will not be processed.")
+        logger.warning("ffmpeg is not installed. Videos will not be processed.")
 
     new_file_count = 0
     for file in db.get_unprocessed_timeline_files(cursor):
@@ -134,7 +136,7 @@ class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, Decimal):
             return str(o)  # Or float(obj) if you prefer float representation
-        return super(DecimalEncoder, self).default(o)
+        return super().default(o)
 
 
 def generate_financial_report(cursor, output_path: Path):
@@ -145,7 +147,7 @@ def generate_financial_report(cursor, output_path: Path):
     for entry in db.get_entries_by_type(cursor, EntryType.TRANSACTION):
         amount = Decimal(entry.data["amount"])
         date_str = entry.date_start.strftime("%Y-%m-%d")
-        transaction_amount_by_day.setdefault(date_str, Decimal("0"))
+        transaction_amount_by_day.setdefault(date_str, Decimal(0))
         transaction_amount_by_day[date_str] += amount
 
     balances_by_date = {}
@@ -187,6 +189,83 @@ def generate_financial_report(cursor, output_path: Path):
         json.dump(balances_by_date, json_file, cls=DecimalEncoder)
 
 
+def dates_to_date_ranges(dates: list[date]) -> list[tuple[date, date]]:
+    if not dates:
+        return []
+
+    sorted_dates = sorted(dates)
+    date_ranges: list[tuple[date, date]] = []
+
+    for current_date in sorted_dates:
+        try:
+            previous_date = date_ranges[-1][1]
+            is_sequential = current_date - previous_date == timedelta(days=1)
+        except IndexError:
+            is_sequential = False
+
+        if is_sequential:
+            # Update the end date of the latest range
+            date_ranges[-1] = date_ranges[-1][0], current_date
+        else:
+            # Create a new date range
+            date_ranges.append((current_date, current_date))
+
+    return date_ranges
+
+
+def generate_visited_countries_list(cursor, output_path: Path):
+    """
+    Get a list of visited countries from geolocated entries.
+    Outputs a map of country name and date ranges per (ISO 3166-1 alpha-2) country code.
+    """
+    logger.info("Generating list of visited countries")
+
+    coordinates_to_country: dict[tuple[float, float], tuple[str, str]] = {}
+    country_code_to_name: dict[str, str] = {}
+    country_code_to_dates: dict[str, set[date]] = {}
+
+    for entry in db.get_entries_by_type(cursor, EntryType.GEOLOCATION):
+        location = entry.data.get("location") or {}
+        lat = location.get("latitude")
+        lng = location.get("longitude")
+
+        if lat is None or lng is None:
+            continue
+
+        # Reduce geolocation precision to store fewer points in memory
+        rough_coordinates = (
+            round(float(lat), 2),  # Neighbourhood-level precision
+            round(float(lng), 2),
+        )
+
+        # Coordinates to country, with caching
+        if rough_coordinates not in coordinates_to_country:
+            reverse_geolocation = reverse_geocode.search((rough_coordinates,))[0]
+            coordinates_to_country[rough_coordinates] = (
+                reverse_geolocation["country_code"],
+                reverse_geolocation["country"],
+            )
+
+        country_code, country_name = coordinates_to_country[rough_coordinates]
+        country_code_to_name[country_code] = country_name
+        country_code_to_dates.setdefault(country_code, set())
+        country_code_to_dates[country_code].add(entry.date_start.date())
+
+    output = {
+        country_code: {
+            "countryName": country_code_to_name[country_code],
+            "ranges": [
+                [start.isoformat(), end.isoformat()]
+                for start, end in dates_to_date_ranges(list(dates_in_country))
+            ],
+        }
+        for country_code, dates_in_country in country_code_to_dates.items()
+    }
+
+    with output_path.open("w") as f:
+        json.dump(output, f)
+
+
 def generate(
     input_paths,
     includerules,
@@ -196,7 +275,7 @@ def generate(
     google_maps_api_key: str = "",
     live_templates: bool = False,
 ):
-    logging.info(f"Building timeline, saving it to {str(output_root)}")
+    logger.info(f"Building timeline, saving it to {output_root!s}")
 
     metadata_root = output_root / "metadata"
     metadata_root.mkdir(parents=True, exist_ok=True)
@@ -240,4 +319,5 @@ def generate(
 
     generate_daily_entry_lists(cursor, output_root / "entries")
     generate_financial_report(cursor, output_root / "entries" / "finances.json")
+    generate_visited_countries_list(cursor, output_root / "entries" / "visited-countries.json")
     logger.info("Timeline generation done.")

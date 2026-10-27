@@ -121,7 +121,9 @@ export default Vue.component('timeline-nav', {
       </div>
       <h1 class="timeline-date" v-if="!showDateInput" @click="editDate">
         <time>{{ timelineDate.format('LL') }}</time>
-        <small>{{ timelineDate.format('dddd') }}, {{ relativeTimelineDate }}</small>
+        <small>
+          {{ timelineDate.format('dddd') }}, {{ relativeTimelineDate }}
+        </small>
       </h1>
       <div class="controls forward">
         <router-link title="Next day — Right arrow or 'D'" :disabled="!showTomorrow" :to="routerDateLink('days', 1)">D</router-link>

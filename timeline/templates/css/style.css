@@ -492,3 +492,126 @@ a{
         text-align: right;
         font-size: var(--m);
     }
+
+.entry.post, .entry.comment{
+    background: var(--c-widget);
+    padding: var(--s);
+    display: grid;
+    grid-template-columns: 2em 1fr auto;
+    grid-template-areas: "icon meta time" ". body body";
+    align-items: center;
+    cursor: pointer;
+    gap: var(--xs) var(--m);
+    font-size: var(--m);
+}
+    .entry.post > i, .entry.comment > i{
+        grid-area: icon;
+        text-align: center;
+        font-size: var(--l);
+        color: #ff4500;
+    }
+    .entry.post .meta, .entry.comment .meta{
+        grid-area: meta;
+        display: flex;
+        flex-direction: column;
+        gap: var(--xs);
+    }
+    .entry.post .title, .entry.comment .post-title{
+        color: var(--c-text);
+        font-weight: bold;
+        text-decoration: none;
+        line-height: var(--line-height-heading);
+    }
+        .entry.post .title:hover, .entry.comment .post-title:hover{
+            color: var(--c-text-link);
+        }
+    .entry.post .subreddit, .entry.comment .subreddit{
+        font-size: var(--f-s);
+        color: var(--c-text-light);
+    }
+    .entry.post > time, .entry.comment > time{
+        grid-area: time;
+        text-align: right;
+        color: var(--c-text-light);
+    }
+    .entry.post .body, .entry.comment .body{
+        grid-area: body;
+        font-size: var(--f-s);
+        line-height: var(--line-height-text);
+        margin-top: var(--xs);
+    }
+        .entry.post .body p, .entry.comment .body p{
+            margin: var(--xs) 0;
+        }
+        .entry.post .body :first-child, .entry.comment .body :first-child{
+            margin-top: 0;
+        }
+        .entry.post .body :last-child, .entry.comment .body :last-child{
+            margin-bottom: 0;
+        }
+
+.country-map-page{
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+    .country-map{
+        width: 100%;
+        height: 100%;
+    }
+    .country-map-back{
+        position: absolute;
+        top: var(--m);
+        left: var(--m);
+        z-index: 1;
+        background: var(--c-page);
+        padding: var(--s) var(--m);
+        border-radius: var(--b-radius);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    }
+    .country-sidebar{
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 320px;
+        max-width: 90vw;
+        height: 100%;
+        background: var(--c-page);
+        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+        padding: var(--m);
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+        .country-sidebar .close{
+            position: absolute;
+            top: var(--s);
+            right: var(--s);
+            background: none;
+            border: 0;
+            font-size: var(--xl);
+            line-height: 1;
+            cursor: pointer;
+            color: var(--c-text);
+        }
+        .country-sidebar h2{
+            margin: 0 0 var(--m);
+            font-size: var(--xl);
+            font-family: var(--f-text);
+        }
+        .country-sidebar h3{
+            margin: var(--m) 0 var(--xs);
+            font-size: var(--l);
+            font-family: var(--f-text);
+        }
+        .country-sidebar ul{
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: var(--f-s);
+            line-height: var(--line-height-text);
+        }
+        .country-sidebar li{
+            padding: var(--xs) 0;
+            border-top: var(--b-light);
+        }

@@ -8,6 +8,8 @@ import TimelineSearchEntry from './entries/search.js';
 import TimelineTextEntry from './entries/text.js';
 import TimelineTransactionEntry from './entries/transaction.js';
 import TimelineVideoEntry from './entries/video.js';
+import TimelinePostEntry from './entries/post.js';
+import TimelineCommentEntry from './entries/comment.js';
 import Weather from './weather.js';
 import { formattedAmount } from './../libs/currency.js';
 import { RequestStatus } from './../models/requests.js';

@@ -10,3 +10,9 @@ enter = "uv pip install -e ."
 
 [tasks.test]
 run = "uv run pytest"
+
+[tasks.serve]
+run = "timeline $TIMELINE_FILES_PATH -s 8080 --maps-key $GOOGLE_MAPS_API_KEY"
+
+[tasks.dev]
+run = "timeline $TIMELINE_FILES_PATH -s 8080 --maps-key $GOOGLE_MAPS_API_KEY --live-templates"
