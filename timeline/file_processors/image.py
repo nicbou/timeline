@@ -1,14 +1,14 @@
-from datetime import datetime, timezone
-from pathlib import Path
-from PIL import Image, ImageFile, ExifTags
-from PIL.ImageOps import exif_transpose
-from PIL.ExifTags import TAGS, GPSTAGS
-from pillow_heif import register_heif_opener
-from timeline.file_processors import dates_from_file
-from timeline.models import TimelineFile, TimelineEntry, EntryType
 import logging
 import math
+from datetime import UTC, datetime
+from pathlib import Path
 
+from PIL import ExifTags, Image, ImageFile
+from PIL.ExifTags import GPSTAGS, TAGS
+from PIL.ImageOps import exif_transpose
+from pillow_heif import register_heif_opener
+from timeline.file_processors import dates_from_file
+from timeline.models import EntryType, TimelineEntry, TimelineFile
 
 logger = logging.getLogger(__name__)
 
@@ -119,25 +119,33 @@ def get_image_metadata(image_path: Path) -> dict:
         )
 
     # Geolocation
-    if "GPSInfo" in exif:
-        if "GPSLatitude" in exif["GPSInfo"] and "GPSLongitude" in exif["GPSInfo"]:
-            try:
-                metadata["location"] = {
-                    "latitude": parse_exif_coordinate(
-                        exif["GPSInfo"]["GPSLatitude"],
-                        exif["GPSInfo"].get("GPSLatitudeRef"),
-                    ),
-                    "longitude": parse_exif_coordinate(
-                        exif["GPSInfo"]["GPSLongitude"],
-                        exif["GPSInfo"].get("GPSLongitudeRef"),
-                    ),
-                }
-            except ValueError:
-                logger.warning(
-                    f"Invalid GPS coordinates: "
-                    f"{exif['GPSInfo']['GPSLatitude']}, {exif['GPSInfo']['GPSLongitude']}"
-                    f" - {str(image_path)}"
-                )
+    if (
+        "GPSInfo" in exif
+        and "GPSLatitude" in exif["GPSInfo"]
+        and "GPSLongitude" in exif["GPSInfo"]
+    ):
+        try:
+            metadata["location"] = {
+                "latitude": parse_exif_coordinate(
+                    exif["GPSInfo"]["GPSLatitude"],
+                    exif["GPSInfo"].get("GPSLatitudeRef"),
+                ),
+                "longitude": parse_exif_coordinate(
+                    exif["GPSInfo"]["GPSLongitude"],
+                    exif["GPSInfo"].get("GPSLongitudeRef"),
+                ),
+            }
+            if "GPSAltitude" in exif["GPSInfo"]:
+                altitude = float(exif["GPSInfo"]["GPSAltitude"])
+                if exif["GPSInfo"].get("GPSAltitudeRef") == 1:
+                    altitude = -altitude
+                metadata["location"]["altitude"] = round(altitude, 4)
+        except ValueError:
+            logger.warning(
+                f"Invalid GPS coordinates: "
+                f"{exif['GPSInfo']['GPSLatitude']}, {exif['GPSInfo']['GPSLongitude']}, {exif['GPSInfo'].get('GPSAltitude', 'null')}"
+                f" - {image_path!s}"
+            )
 
     # Date
     if "GPSDateStamp" in exif.get("GPSInfo", {}) and "GPSTimeStamp" in exif.get(
@@ -156,7 +164,7 @@ def get_image_metadata(image_path: Path) -> dict:
             )
             gps_datetime = f"{gps_date} {gps_time}"
             metadata["media"]["creation_date"] = parse_exif_date(gps_datetime).replace(
-                tzinfo=timezone.utc
+                tzinfo=UTC
             )
         except ValueError:
             logger.warning(
