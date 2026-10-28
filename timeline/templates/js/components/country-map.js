@@ -8,7 +8,6 @@ export default Vue.component('country-map', {
     return {
       visitedCountries: {},
       countryShapes: {},
-      selectedCountry: null,
     };
   },
   async mounted() {
@@ -39,12 +38,19 @@ export default Vue.component('country-map', {
         fillOpacity: 0.6,
       });
       polygon.addListener('click', () => {
-        this.selectedCountry = { countryCode, countryName, ranges };
+        this.$router.replace({ name: 'country', params: { countryCode } });
       });
       polygon.setMap(map);
     }
   },
   computed: {
+    selectedCountry() {
+      const code = this.$route.params.countryCode;
+      if (!code) return null;
+      const country = this.visitedCountries[code];
+      if (!country) return null;
+      return { countryCode: code, countryName: country.countryName, ranges: country.ranges };
+    },
     sortedCountries() {
       return Object.entries(this.visitedCountries)
         .map(([countryCode, { countryName, ranges }]) => ({ countryCode, countryName, ranges }))
@@ -98,7 +104,7 @@ export default Vue.component('country-map', {
       <div ref="mapEl" class="country-map"></div>
       <aside class="country-sidebar">
         <template v-if="selectedCountry">
-          <a href="#" class="country-sidebar-back" @click.prevent="selectedCountry = null">« All countries</a>
+          <router-link class="country-sidebar-back" :to="{ name: 'map' }" replace>« All countries</router-link>
           <h2>{{ selectedCountry.countryName }}</h2>
           <template v-for="group in rangesByYear">
             <h3 :key="group.year">{{ group.year }}</h3>
@@ -115,7 +121,9 @@ export default Vue.component('country-map', {
           <h2>Visited countries</h2>
           <ul class="country-list">
             <li v-for="country in sortedCountries" :key="country.countryCode">
-              <a href="#" @click.prevent="selectedCountry = country">{{ country.countryName }}</a>
+              <router-link :to="{ name: 'country', params: { countryCode: country.countryCode } }" replace>
+                {{ country.countryName }}
+              </router-link>
             </li>
           </ul>
         </template>

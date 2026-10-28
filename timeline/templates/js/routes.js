@@ -17,6 +17,11 @@ const router = new VueRouter({
       component: CountryMapComponent,
     },
     {
+      path: '/map/:countryCode',
+      name: 'country',
+      component: CountryMapComponent,
+    },
+    {
       path: '/',
       redirect: { name: 'timeline' }
     },
