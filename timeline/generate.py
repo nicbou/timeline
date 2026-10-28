@@ -7,8 +7,11 @@ from decimal import Decimal
 from importlib.resources import as_file, files
 from itertools import chain
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import reverse_geocode
+from timezonefinder import TimezoneFinder
+
 import timeline.database as db
 from timeline.file_processors.balance import process_balance_list
 from timeline.file_processors.calendar import process_calendar_db, process_icalendar
@@ -219,7 +222,9 @@ def generate_visited_countries_list(cursor, output_path: Path):
     """
     logger.info("Generating list of visited countries")
 
+    tz_finder = TimezoneFinder()
     coordinates_to_country: dict[tuple[float, float], tuple[str, str]] = {}
+    coordinates_to_tz: dict[tuple[float, float], ZoneInfo | None] = {}
     country_code_to_name: dict[str, str] = {}
     country_code_to_dates: dict[str, set[date]] = {}
 
@@ -250,10 +255,23 @@ def generate_visited_countries_list(cursor, output_path: Path):
                 reverse_geolocation["country"],
             )
 
+        # Coordinates to timezone, with caching. The date must be in the local
+        # timezone of the point, not the generator's — otherwise points near
+        # midnight get bucketed to the wrong day.
+        if rough_coordinates not in coordinates_to_tz:
+            tz_name = tz_finder.timezone_at(lat=rough_coordinates[0], lng=rough_coordinates[1])
+            try:
+                coordinates_to_tz[rough_coordinates] = ZoneInfo(tz_name) if tz_name else None
+            except ZoneInfoNotFoundError:
+                coordinates_to_tz[rough_coordinates] = None
+
         country_code, country_name = coordinates_to_country[rough_coordinates]
         country_code_to_name[country_code] = country_name
         country_code_to_dates.setdefault(country_code, set())
-        country_code_to_dates[country_code].add(entry.date_start.date())
+
+        local_tz = coordinates_to_tz[rough_coordinates]
+        local_date = entry.date_start.astimezone(local_tz).date() if local_tz else entry.date_start.date()
+        country_code_to_dates[country_code].add(local_date)
 
     output = {
         country_code: {
