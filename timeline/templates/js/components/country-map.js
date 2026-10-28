@@ -45,6 +45,11 @@ export default Vue.component('country-map', {
     }
   },
   computed: {
+    sortedCountries() {
+      return Object.entries(this.visitedCountries)
+        .map(([countryCode, { countryName, ranges }]) => ({ countryCode, countryName, ranges }))
+        .sort((a, b) => a.countryName.localeCompare(b.countryName));
+    },
     rangesByYear() {
       if (!this.selectedCountry) return [];
       const groups = new Map();
@@ -91,16 +96,26 @@ export default Vue.component('country-map', {
     <main class="country-map-page">
       <router-link class="country-map-back" :to="{ name: 'timeline' }">« Back to timeline</router-link>
       <div ref="mapEl" class="country-map"></div>
-      <aside v-if="selectedCountry" class="country-sidebar">
-        <button class="close" @click="selectedCountry = null" aria-label="Close">×</button>
-        <h2>{{ selectedCountry.countryName }}</h2>
-        <template v-for="group in rangesByYear">
-          <h3 :key="group.year">{{ group.year }}</h3>
-          <ul :key="group.year + '-list'">
-            <li v-for="[start, end] in group.ranges" :key="start + end">
-              <router-link :to="{ name: 'timeline', query: { date: start } }">
-                {{ formatRange(start, end) }}
-              </router-link>
+      <aside class="country-sidebar">
+        <template v-if="selectedCountry">
+          <a href="#" class="country-sidebar-back" @click.prevent="selectedCountry = null">« All countries</a>
+          <h2>{{ selectedCountry.countryName }}</h2>
+          <template v-for="group in rangesByYear">
+            <h3 :key="group.year">{{ group.year }}</h3>
+            <ul :key="group.year + '-list'">
+              <li v-for="[start, end] in group.ranges" :key="start + end">
+                <router-link :to="{ name: 'timeline', query: { date: start } }">
+                  {{ formatRange(start, end) }}
+                </router-link>
+              </li>
+            </ul>
+          </template>
+        </template>
+        <template v-else>
+          <h2>Visited countries</h2>
+          <ul class="country-list">
+            <li v-for="country in sortedCountries" :key="country.countryCode">
+              <a href="#" @click.prevent="selectedCountry = country">{{ country.countryName }}</a>
             </li>
           </ul>
         </template>

@@ -591,16 +591,9 @@ a{
         overflow-y: auto;
         box-sizing: border-box;
     }
-        .country-sidebar .close{
-            position: absolute;
-            top: var(--s);
-            right: var(--s);
-            background: none;
-            border: 0;
-            font-size: var(--xl);
-            line-height: 1;
-            cursor: pointer;
-            color: var(--c-text);
+        .country-sidebar-back{
+            display: inline-block;
+            margin-bottom: var(--s);
         }
         .country-sidebar h2{
             margin: 0 0 var(--m);
@@ -623,3 +616,16 @@ a{
             padding: var(--xs) 0;
             border-top: var(--b-light);
         }
+
+    @media screen and (max-width: 601px) {
+        .country-sidebar{
+            top: auto;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            max-width: none;
+            height: 50%;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+        }
+    }
