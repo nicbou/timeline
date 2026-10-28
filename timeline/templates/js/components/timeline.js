@@ -30,7 +30,7 @@ function makeRouteValid(to, from, next) {
 
 export default Vue.component('timeline', {
   created() {
-    this.$store.dispatch('timeline/getEntries', { date: this.$route.query.date });
+    this.$store.dispatch('timeline/getEntries', { date: this.$route.query.date, forceRefresh: true });
   },
   watch: {
     '$route.query': function() {
