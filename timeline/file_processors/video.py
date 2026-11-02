@@ -175,50 +175,51 @@ def process_video(file: TimelineFile, metadata_root: Path):
 
     try:
         ffprobe_data = json.loads(ffprobe_cmd.stdout.decode("utf-8"))
-    except KeyError:
-        raise ValueError(f"Could not read metadata of {str(file.file_path)}")
 
-    date_start, date_end = dates_from_file(file.file_path)
-    entry_data = {
-        "media": {},
-    }
-
-    for stream in ffprobe_data["streams"]:
-        if stream["codec_type"] == "video":
-            entry_data["media"]["width"] = int(stream["width"])
-            entry_data["media"]["height"] = int(stream["height"])
-        if "codec_name" in stream:
-            entry_data["media"]["codec"] = stream["codec_name"]
-        if "rotate" in stream.get("tags", {}):
-            entry_data["media"]["orientation"] = int(stream["tags"]["rotate"])
-
-    entry_data["media"]["duration"] = int(float(ffprobe_data["format"]["duration"]))
-
-    if ffprobe_data["format"].get("tags", {}).get("location"):
-        lat, lng, alt = parse_video_geolocation(
-            ffprobe_data["format"]["tags"]["location"]
-        )
-        entry_data["location"] = {
-            "latitude": float(lat),
-            "longitude": float(lng),
+        date_start, date_end = dates_from_file(file.file_path)
+        entry_data = {
+            "media": {},
         }
-        if alt:
-            entry_data["location"]["altitude"] = alt
 
-    if ffprobe_data["format"].get("tags", {}).get("creation_time"):
-        # The dates are stored as UTC. EXIF metadata might contain timezone-aware dates, but accessing them would
-        # require exiftool, which is a non-Python external dependency. It's easier to just get the timezone from the
-        # GPS coordinates.
-        date_start = datetime.strptime(
-            ffprobe_data["format"]["tags"]["creation_time"], "%Y-%m-%dT%H:%M:%S.%fZ"
-        ).replace(tzinfo=timezone.utc)
+        for stream in ffprobe_data["streams"]:
+            if stream["codec_type"] == "video":
+                entry_data["media"]["width"] = int(stream["width"])
+                entry_data["media"]["height"] = int(stream["height"])
+            if "codec_name" in stream:
+                entry_data["media"]["codec"] = stream["codec_name"]
+            if "rotate" in stream.get("tags", {}):
+                entry_data["media"]["orientation"] = int(stream["tags"]["rotate"])
 
-        if entry_data.get("location"):
-            timezone_string = tz_finder.timezone_at(
-                lat=entry_data["location"]["latitude"],
-                lng=entry_data["location"]["longitude"],
+        entry_data["media"]["duration"] = int(float(ffprobe_data["format"]["duration"]))
+
+        if ffprobe_data["format"].get("tags", {}).get("location"):
+            lat, lng, alt = parse_video_geolocation(
+                ffprobe_data["format"]["tags"]["location"]
             )
-            date_start = date_start.astimezone(pytz.timezone(timezone_string))
+            entry_data["location"] = {
+                "latitude": float(lat),
+                "longitude": float(lng),
+            }
+            if alt:
+                entry_data["location"]["altitude"] = alt
+
+        if ffprobe_data["format"].get("tags", {}).get("creation_time"):
+            # The dates are stored as UTC. EXIF metadata might contain timezone-aware dates, but accessing them would
+            # require exiftool, which is a non-Python external dependency. It's easier to just get the timezone from the
+            # GPS coordinates.
+            date_start = datetime.strptime(
+                ffprobe_data["format"]["tags"]["creation_time"], "%Y-%m-%dT%H:%M:%S.%fZ"
+            ).replace(tzinfo=timezone.utc)
+
+            if entry_data.get("location"):
+                timezone_string = tz_finder.timezone_at(
+                    lat=entry_data["location"]["latitude"],
+                    lng=entry_data["location"]["longitude"],
+                )
+                date_start = date_start.astimezone(pytz.timezone(timezone_string))
+    except Exception:
+        logger.exception(f"Could not read metadata - {file.file_path}")
+        return
 
     output_path = metadata_root / file.checksum / "thumbnail.webm"
     if not output_path.exists():
